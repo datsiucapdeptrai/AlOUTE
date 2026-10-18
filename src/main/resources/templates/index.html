@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FAKEBOOK</title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+        rel="stylesheet">
+</head>
+
+<body class="bg-light">
+
+    <nav class="navbar navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand fw-bold"
+               th:href="@{/}"
+               href="/">
+                FAKEBOOK
+            </a>
+
+            <div class="d-flex gap-2">
+                <a class="btn btn-light"
+                   th:href="@{/login}"
+                   href="/login">
+                    Đăng nhập
+                </a>
+
+                <a class="btn btn-outline-light"
+                   th:href="@{/register}"
+                   href="/register">
+                    Đăng ký
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container py-5 text-center">
+        <h1 class="display-4 fw-bold text-primary">FAKEBOOK</h1>
+
+        <p class="lead text-secondary">
+            Mạng xã hội kết nối và chia sẻ dành cho sinh viên
+        </p>
+
+        <div class="mt-4">
+            <a class="btn btn-primary btn-lg"
+               th:href="@{/login}"
+               href="/login">
+                Đăng nhập
+            </a>
+
+            <a class="btn btn-outline-primary btn-lg"
+               th:href="@{/register}"
+               href="/register">
+                Đăng ký
+            </a>
+        </div>
+    </main>
+
+</body>
+</html>

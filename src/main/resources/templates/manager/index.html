@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Manager | FAKEBOOK</title>
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
+    <style>
+        body { background-color: #f0f2f5; }
+        .sidebar { min-height: calc(100vh - 56px); background-color: #212529; }
+        .sidebar a { display: block; padding: 12px 18px; color: #ced4da; text-decoration: none; border-radius: 7px; margin-bottom: 5px; }
+        .sidebar a:hover, .sidebar a.active { color: white; background-color: #198754; }
+        .stat-card { height: 100%; border: 0; border-radius: 14px; transition: transform 0.2s; }
+        .stat-card:hover { transform: translateY(-3px); }
+        .stat-number { font-size: 2rem; font-weight: 700; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-dark bg-success shadow-sm">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand fw-bold" th:href="@{/manager}">FAKEBOOK MANAGER</a>
+        <form th:action="@{/logout}" method="post">
+            <button type="submit" class="btn btn-outline-light btn-sm">Đăng xuất</button>
+        </form>
+    </div>
+</nav>
+
+<div class="container-fluid">
+    <div class="row">
+        <aside class="col-md-3 col-lg-2 sidebar p-3">
+            <a class="active" th:href="@{/manager}">Tổng quan</a>
+            <a th:href="@{/manager/posts}">Quản lý bài viết</a>
+            <a th:href="@{/manager/comments}">Quản lý bình luận</a>
+            <a th:href="@{/manager/videos}">Quản lý video</a>
+            <a th:href="@{/feed}">Xem bảng tin</a>
+        </aside>
+
+        <main class="col-md-9 col-lg-10 p-4 p-lg-5">
+            <div class="mb-4">
+                <h1 class="h3 fw-bold">Tổng quan hệ thống (Manager)</h1>
+                <p class="text-secondary mb-0">Thống kê hoạt động của FAKEBOOK</p>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-sm-6 col-xl-4">
+                    <div class="card stat-card shadow-sm">
+                        <div class="card-body">
+                            <div class="text-secondary">Bài viết đang hoạt động</div>
+                            <div class="stat-number text-success" th:text="${statistics.totalPosts}">0</div>
+                            <a class="small text-decoration-none" th:href="@{/manager/posts}">Quản lý bài viết</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-4">
+                    <div class="card stat-card shadow-sm">
+                        <div class="card-body">
+                            <div class="text-secondary">Video</div>
+                            <div class="stat-number text-danger" th:text="${statistics.totalVideos}">0</div>
+                            <a class="small text-decoration-none" th:href="@{/manager/videos}">Quản lý video</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-4">
+                    <div class="card stat-card shadow-sm">
+                        <div class="card-body">
+                            <div class="text-secondary">Bình luận</div>
+                            <div class="stat-number text-warning" th:text="${statistics.totalComments}">0</div>
+                            <a class="small text-decoration-none" th:href="@{/manager/comments}">Quản lý bình luận</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+</body>
+</html>

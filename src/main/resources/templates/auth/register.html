@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Đăng ký | FAKEBOOK</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+          rel="stylesheet">
+</head>
+<body class="bg-light">
+<nav class="navbar navbar-dark bg-primary">
+    <div class="container">
+        <a class="navbar-brand fw-bold" th:href="@{/}">
+            FAKEBOOK
+        </a>
+    </div>
+</nav>
+
+<main class="container py-5">
+    <div class="card border-0 shadow mx-auto"
+         style="max-width: 620px">
+        <div class="card-body p-4 p-md-5">
+            <h1 class="h3 text-center fw-bold">
+                Tạo tài khoản FAKEBOOK
+            </h1>
+            <p class="text-secondary text-center mb-4">
+                Đăng ký và xác thực email bằng mã OTP
+            </p>
+
+            <div th:if="${registerError}"
+                 class="alert alert-danger"
+                 th:text="${registerError}">
+            </div>
+
+            <form th:action="@{/register}"
+                  th:object="${registerRequest}"
+                  method="post">
+
+                <div class="mb-3">
+                    <label for="fullName" class="form-label">
+                        Họ và tên
+                    </label>
+                    <input id="fullName"
+                           class="form-control"
+                           th:field="*{fullName}"
+                           autocomplete="name">
+                    <div class="text-danger small"
+                         th:errors="*{fullName}"></div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="username" class="form-label">
+                        Tên tài khoản
+                    </label>
+                    <input id="username"
+                           class="form-control"
+                           th:field="*{username}"
+                           autocomplete="username">
+                    <div class="text-danger small"
+                         th:errors="*{username}"></div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email</label>
+                    <input id="email"
+                           type="email"
+                           class="form-control"
+                           th:field="*{email}"
+                           autocomplete="email">
+                    <div class="text-danger small"
+                         th:errors="*{email}"></div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="password" class="form-label">
+                        Mật khẩu
+                    </label>
+                    <input id="password"
+                           type="password"
+                           class="form-control"
+                           th:field="*{password}"
+                           autocomplete="new-password">
+                    <div class="text-danger small"
+                         th:errors="*{password}"></div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="confirmPassword" class="form-label">
+                        Nhập lại mật khẩu
+                    </label>
+                    <input id="confirmPassword"
+                           type="password"
+                           class="form-control"
+                           th:field="*{confirmPassword}"
+                           autocomplete="new-password">
+                    <div class="text-danger small"
+                         th:errors="*{confirmPassword}"></div>
+                </div>
+
+                <button type="submit"
+                        class="btn btn-primary btn-lg w-100">
+                    Đăng ký và nhận OTP
+                </button>
+            </form>
+
+            <div class="text-center mt-4">
+                Đã có tài khoản?
+                <a th:href="@{/login}">Đăng nhập</a>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

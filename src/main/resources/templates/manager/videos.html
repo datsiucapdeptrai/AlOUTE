@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Quản lý video | Manager</title>
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
+    <style>
+        body { background: #f0f2f5; }
+        .sidebar { min-height: calc(100vh - 56px); background: #212529; }
+        .sidebar a { display: block; color: #ced4da; padding: 12px 18px; margin-bottom: 5px; border-radius: 7px; text-decoration: none; }
+        .sidebar a:hover, .sidebar a.active { color: white; background: #198754; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-dark bg-success shadow-sm">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand fw-bold" th:href="@{/manager}">FAKEBOOK MANAGER</a>
+        <form th:action="@{/logout}" method="post">
+            <button class="btn btn-outline-light btn-sm" type="submit">Đăng xuất</button>
+        </form>
+    </div>
+</nav>
+
+<div class="container-fluid">
+    <div class="row">
+        <aside class="col-md-3 col-lg-2 sidebar p-3">
+            <a th:href="@{/manager}">Tổng quan</a>
+            <a th:href="@{/manager/posts}">Quản lý bài viết</a>
+            <a th:href="@{/manager/comments}">Quản lý bình luận</a>
+            <a class="active" th:href="@{/manager/videos}">Quản lý video</a>
+            <a th:href="@{/feed}">Xem bảng tin</a>
+        </aside>
+
+        <main class="col-md-9 col-lg-10 p-4">
+            <h1 class="h3 fw-bold mb-4">Quản lý video</h1>
+
+            <div class="row g-4">
+                <div class="col-md-6 col-lg-4" th:each="video : ${videoPage.content}">
+                    <div class="card shadow-sm h-100">
+                        <video class="card-img-top" controls preload="metadata"
+                               th:src="${video.videoUrl}"
+                               th:poster="${video.videoPosterUrl}"
+                               style="height: 180px; object-fit: cover; background: #000;">
+                        </video>
+                        <div class="card-body">
+                            <h6 class="card-title"
+                                th:text="${video.title != null ? video.title : 'Không có tiêu đề'}">
+                                Tiêu đề
+                            </h6>
+                            <small class="text-secondary"
+                                   th:text="'@' + ${video.author.username}">@username</small>
+                            <div class="mt-2 small text-secondary">
+                                <span th:text="${video.viewCount}">0</span> lượt xem ·
+                                <span th:text="${video.shareCount}">0</span> lượt chia sẻ
+                            </div>
+                        </div>
+                        <div class="card-footer bg-white">
+                            <a th:href="@{/videos/{id}(id=${video.id})}"
+                               class="btn btn-sm btn-outline-success">Xem chi tiết</a>
+                            <form th:action="@{/manager/posts/{id}/delete(id=${video.id})}"
+                                  method="post" class="d-inline"
+                                  onsubmit="return confirm('Ẩn video này?')">
+                                <button class="btn btn-sm btn-danger" type="submit">Ẩn</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div th:if="${videoPage.empty}" class="col-12">
+                    <div class="card shadow-sm">
+                        <div class="card-body text-center py-5 text-secondary">
+                            Chưa có video nào.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <nav th:if="${videoPage.totalPages > 1}" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item" th:classappend="${videoPage.first} ? 'disabled'">
+                        <a class="page-link"
+                           th:href="@{/manager/videos(page=${videoPage.number - 1})}">Trước</a>
+                    </li>
+                    <li class="page-item"
+                        th:each="n : ${#numbers.sequence(0, videoPage.totalPages - 1)}"
+                        th:classappend="${n == videoPage.number} ? 'active'">
+                        <a class="page-link"
+                           th:href="@{/manager/videos(page=${n})}"
+                           th:text="${n + 1}">1</a>
+                    </li>
+                    <li class="page-item" th:classappend="${videoPage.last} ? 'disabled'">
+                        <a class="page-link"
+                           th:href="@{/manager/videos(page=${videoPage.number + 1})}">Sau</a>
+                    </li>
+                </ul>
+            </nav>
+        </main>
+    </div>
+</div>
+
+</body>
+</html>

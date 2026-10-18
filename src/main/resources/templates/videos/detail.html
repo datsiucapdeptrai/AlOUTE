@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${post.title + ' | FAKEBOOK'}">Chi tiết video</title>
+    <meta th:if="${_csrf != null}" name="_csrf" th:content="${_csrf.token}">
+    <meta th:if="${_csrf != null}" name="_csrf_header" th:content="${_csrf.headerName}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .main-video { width: 100%; max-height: 70vh; background: #000; }
+        .comment-box { background: #f0f2f5; }
+        .post-content { white-space: pre-wrap; overflow-wrap: anywhere; }
+    </style>
+</head>
+<body class="bg-light">
+<nav class="navbar navbar-dark bg-primary shadow-sm">
+    <div class="container">
+        <a class="navbar-brand fw-bold" th:href="@{/feed}">FAKEBOOK</a>
+        <div class="d-flex gap-2">
+            <a class="btn btn-outline-light btn-sm" th:href="@{/videos}">Danh sách video</a>
+            <a class="btn btn-light btn-sm" th:href="@{/feed}">Bảng tin</a>
+        </div>
+    </div>
+</nav>
+
+<main class="container py-4">
+    <article class="card shadow-sm">
+        <div class="card-body p-3 p-lg-4">
+            <video controls preload="metadata" class="main-video rounded tracked-video"
+                   th:src="${post.videoUrl}" th:poster="${post.videoPosterUrl}"
+                   th:attr="data-view-url=@{/videos/{id}/view(id=${post.id})},data-post-id=${post.id}"></video>
+
+            <h1 class="h3 mt-3" th:text="${post.title}">Tiêu đề video</h1>
+            <div class="text-secondary mb-3">
+                <span>Mã video: <strong th:text="${post.id}">1</strong></span>
+                <span> · Category: <strong th:text="${post.videoCategory != null ? post.videoCategory.name : 'Chưa phân loại'}">Category</strong></span>
+                <span> · Đăng bởi <strong th:text="${post.author.fullName}">Tác giả</strong></span>
+            </div>
+            <p class="post-content" th:text="${post.content}">Mô tả</p>
+
+            <div class="d-flex flex-wrap justify-content-between gap-3 border-top border-bottom py-3">
+                <div class="d-flex gap-3 text-secondary">
+                    <span>View: <strong th:id="|view-count-${post.id}|" th:text="${post.viewCount}">0</strong></span>
+                    <span>Like: <strong th:id="|like-count-${post.id}|" th:text="${likeCount}">0</strong></span>
+                    <span>Share: <strong th:id="|share-count-${post.id}|" th:text="${post.shareCount}">0</strong></span>
+                </div>
+                <div class="d-flex gap-2">
+                    <form th:action="@{/posts/{id}/like(id=${post.id})}" method="post"
+                          class="like-form" th:attr="data-post-id=${post.id}">
+                        <button type="submit" class="btn btn-sm like-button"
+                                th:classappend="${liked} ? 'btn-primary' : 'btn-outline-primary'">
+                            <span class="like-text" th:text="${liked} ? 'Đã thích' : 'Thích'">Thích</span>
+                        </button>
+                    </form>
+                    <button type="button" class="btn btn-outline-success btn-sm share-video-button"
+                            th:attr="data-share-endpoint=@{/videos/{id}/share(id=${post.id})},data-share-url=@{/videos/{id}(id=${post.id})},data-share-title=${post.title},data-post-id=${post.id}">
+                        Chia sẻ
+                    </button>
+                </div>
+            </div>
+
+            <section class="mt-4">
+                <h2 class="h5">Bình luận</h2>
+                <div th:id="|comments-post-${post.id}|">
+                    <div th:each="comment : ${comments}" class="comment-box rounded p-2 mb-2">
+                        <div class="d-flex justify-content-between">
+                            <div><strong th:text="${comment.author.fullName}">Tên</strong>
+                                <small class="text-secondary" th:text="'@' + ${comment.author.username}">@user</small></div>
+                            <form th:if="${currentUser.id == comment.author.id}"
+                                  th:action="@{/comments/{id}/delete(id=${comment.id})}" method="post">
+                                <button class="btn btn-link text-danger btn-sm p-0">Xóa</button>
+                            </form>
+                        </div>
+                        <div class="post-content" th:text="${comment.content}">Bình luận</div>
+                    </div>
+                </div>
+                <form th:action="@{/posts/{id}/comments(id=${post.id})}" method="post"
+                      class="comment-form d-flex gap-2 mt-3" th:attr="data-post-id=${post.id}">
+                    <input name="content" maxlength="2000" class="form-control"
+                           placeholder="Viết bình luận..." required>
+                    <button class="btn btn-primary">Gửi</button>
+                </form>
+            </section>
+        </div>
+    </article>
+</main>
+
+<script th:src="@{/js/video-interactions.js}"></script>
+<script th:src="@{/js/post-interactions.js}"></script>
+</body>
+</html>

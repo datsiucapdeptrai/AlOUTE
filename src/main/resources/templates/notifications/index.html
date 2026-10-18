@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="vi"
+      xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1">
+
+    <title>Thông báo | FAKEBOOK</title>
+
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
+</head>
+
+<body class="bg-light">
+
+<nav class="navbar navbar-dark bg-primary shadow-sm">
+    <div class="container">
+        <a class="navbar-brand fw-bold"
+           th:href="@{/feed}">
+            FAKEBOOK
+        </a>
+
+        <a th:href="@{/feed}"
+           class="btn btn-outline-light btn-sm">
+            Bảng tin
+        </a>
+    </div>
+</nav>
+
+<main class="container py-4"
+      style="max-width: 850px;">
+
+    <div class="d-flex justify-content-between
+                align-items-center mb-3">
+
+        <h3 class="mb-0">Thông báo</h3>
+
+        <form th:if="${unreadNotificationCount > 0}"
+              th:action="@{/notifications/read-all}"
+              method="post">
+
+            <button type="submit"
+                    class="btn btn-outline-primary btn-sm">
+                Đánh dấu tất cả đã đọc
+            </button>
+        </form>
+    </div>
+
+    <div th:if="${notifications.empty}"
+         class="card shadow-sm">
+
+        <div class="card-body text-center py-5">
+            <h5>Chưa có thông báo</h5>
+
+            <p class="text-secondary mb-0">
+                Các hoạt động mới sẽ xuất hiện tại đây.
+            </p>
+        </div>
+    </div>
+
+    <div th:each="notification : ${notifications.content}"
+         class="card shadow-sm mb-2"
+         th:classappend="${notification.read}
+            ? ''
+            : 'border-primary bg-primary-subtle'">
+
+        <div class="card-body">
+            <div class="d-flex justify-content-between
+                        align-items-start gap-3">
+
+                <div>
+                    <strong th:text="${notification.actor.fullName}">
+                        Người dùng
+                    </strong>
+
+                    <span th:text="${notification.message}">
+                        Nội dung thông báo
+                    </span>
+
+                    <div class="small text-secondary mt-1"
+                         th:text="${notification.createdAt}">
+                        Thời gian
+                    </div>
+                </div>
+
+                <form th:if="${!notification.read}"
+                      th:action="@{/notifications/{id}/read(
+                            id=${notification.id})}"
+                      method="post">
+
+                    <button type="submit"
+                            class="btn btn-primary btn-sm">
+                        Xem
+                    </button>
+                </form>
+
+                <a th:if="${notification.read
+                        and notification.targetUrl != null}"
+                   th:href="${notification.targetUrl}"
+                   class="btn btn-outline-primary btn-sm">
+                    Xem lại
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <nav th:if="${notifications.totalPages > 1}"
+         class="d-flex justify-content-center
+                align-items-center gap-3 mt-4">
+
+        <a th:if="${notifications.hasPrevious()}"
+           th:href="@{/notifications(
+                page=${notifications.number - 1})}"
+           class="btn btn-outline-primary btn-sm">
+            Trang trước
+        </a>
+
+        <span>
+            Trang
+            <strong th:text="${notifications.number + 1}">
+                1
+            </strong>
+            /
+            <strong th:text="${notifications.totalPages}">
+                1
+            </strong>
+        </span>
+
+        <a th:if="${notifications.hasNext()}"
+           th:href="@{/notifications(
+                page=${notifications.number + 1})}"
+           class="btn btn-outline-primary btn-sm">
+            Trang sau
+        </a>
+    </nav>
+</main>
+
+</body>
+</html>

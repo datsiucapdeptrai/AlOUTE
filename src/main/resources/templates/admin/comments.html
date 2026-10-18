@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Quản lý bình luận</title>
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
+    <style>
+        body { background: #f0f2f5; }
+        .sidebar { min-height: calc(100vh - 56px); background: #212529; }
+        .sidebar a { display: block; color: #ced4da; padding: 12px 18px; margin-bottom: 5px; border-radius: 7px; text-decoration: none; }
+        .sidebar a:hover, .sidebar a.active { color: white; background: #0d6efd; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-dark bg-primary shadow-sm">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand fw-bold" th:href="@{/admin}">FAKEBOOK ADMIN</a>
+        <form th:action="@{/logout}" method="post">
+            <button class="btn btn-outline-light btn-sm" type="submit">Đăng xuất</button>
+        </form>
+    </div>
+</nav>
+
+<div class="container-fluid">
+    <div class="row">
+        <aside class="col-md-3 col-lg-2 sidebar p-3">
+            <a th:href="@{/admin}">Tổng quan</a>
+            <a th:href="@{/admin/users}">Quản lý tài khoản</a>
+            <a th:href="@{/admin/posts}">Quản lý bài viết</a>
+            <a class="active" th:href="@{/admin/comments}">Quản lý bình luận</a>
+            <a th:href="@{/admin/videos}">Quản lý video</a>
+            <a th:href="@{/feed}">Xem bảng tin</a>
+        </aside>
+
+        <main class="col-md-9 col-lg-10 p-4">
+            <h1 class="h3 fw-bold mb-4">Quản lý bình luận</h1>
+
+            <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+            <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+            <form method="get" th:action="@{/admin/comments}"
+                  class="card card-body border-0 shadow-sm mb-4">
+                <div class="row g-2">
+                    <div class="col-md-9">
+                        <input type="text" name="keyword" class="form-control"
+                               placeholder="Tìm nội dung bình luận..." th:value="${keyword}">
+                    </div>
+                    <div class="col-md-3 d-grid">
+                        <button class="btn btn-primary" type="submit">Tìm kiếm</button>
+                    </div>
+                </div>
+            </form>
+
+            <div class="card border-0 shadow-sm">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Người bình luận</th>
+                                <th>Nội dung</th>
+                                <th>Trạng thái</th>
+                                <th class="text-end">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="comment : ${commentPage.content}">
+                                <td th:text="${comment.id}">1</td>
+                                <td>
+                                    <div class="fw-semibold" th:text="${comment.author.fullName}">Tên</div>
+                                    <small class="text-secondary"
+                                           th:text="'@' + ${comment.author.username}">@username</small>
+                                </td>
+                                <td th:text="${#strings.abbreviate(comment.content, 100)}">Nội dung...</td>
+                                <td>
+                                    <span th:if="${comment.status.name() == 'ACTIVE'}"
+                                          class="badge text-bg-success">Hoạt động</span>
+                                    <span th:if="${comment.status.name() == 'DELETED'}"
+                                          class="badge text-bg-secondary">Đã xóa</span>
+                                </td>
+                                <td class="text-end">
+                                    <form th:if="${comment.status.name() == 'ACTIVE'}"
+                                          th:action="@{/admin/comments/{id}/delete(id=${comment.id})}"
+                                          method="post" class="d-inline"
+                                          onsubmit="return confirm('Ẩn bình luận này?')">
+                                        <button class="btn btn-sm btn-danger" type="submit">Ẩn</button>
+                                    </form>
+                                    <form th:if="${comment.status.name() == 'DELETED'}"
+                                          th:action="@{/admin/comments/{id}/restore(id=${comment.id})}"
+                                          method="post" class="d-inline">
+                                        <button class="btn btn-sm btn-success" type="submit">Khôi phục</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            <tr th:if="${commentPage.empty}">
+                                <td colspan="5" class="text-center text-secondary py-4">
+                                    Không có bình luận nào.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <nav th:if="${commentPage.totalPages > 1}" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item" th:classappend="${commentPage.first} ? 'disabled'">
+                        <a class="page-link"
+                           th:href="@{/admin/comments(page=${commentPage.number - 1}, keyword=${keyword})}">
+                            Trước
+                        </a>
+                    </li>
+                    <li class="page-item"
+                        th:each="n : ${#numbers.sequence(0, commentPage.totalPages - 1)}"
+                        th:classappend="${n == commentPage.number} ? 'active'">
+                        <a class="page-link"
+                           th:href="@{/admin/comments(page=${n}, keyword=${keyword})}"
+                           th:text="${n + 1}">1</a>
+                    </li>
+                    <li class="page-item" th:classappend="${commentPage.last} ? 'disabled'">
+                        <a class="page-link"
+                           th:href="@{/admin/comments(page=${commentPage.number + 1}, keyword=${keyword})}">
+                            Sau
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </main>
+    </div>
+</div>
+
+</body>
+</html>

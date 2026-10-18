@@ -1,0 +1,24 @@
+{
+  "properties": [
+    {
+      "name": "app.upload.dir",
+      "type": "java.lang.String",
+      "description": "Thư mục lưu file upload."
+    },
+    {
+      "name": "app.base-url",
+      "type": "java.lang.String",
+      "description": "URL gốc của ứng dụng dùng trong email."
+    },
+    {
+      "name": "security.jwt.secret-key",
+      "type": "java.lang.String",
+      "description": "Secret key để ký JWT (HS256)."
+    },
+    {
+      "name": "security.jwt.expiration-time",
+      "type": "java.lang.Long",
+      "description": "Thời gian hết hạn của JWT (milliseconds)."
+    }
+  ]
+}
