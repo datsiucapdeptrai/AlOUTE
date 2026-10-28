@@ -7,6 +7,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import vn.edu.hcmute.fakebook.entity.Comment;
 import vn.edu.hcmute.fakebook.entity.Post;
+import vn.edu.hcmute.fakebook.enums.ReactionType; // QUAN TRỌNG: Thêm import này
 import vn.edu.hcmute.fakebook.service.CommentService;
 import vn.edu.hcmute.fakebook.service.PostLikeService;
 import vn.edu.hcmute.fakebook.service.PostService;
@@ -21,12 +22,13 @@ public class PostApiController {
 
     private final PostLikeService postLikeService;
     private final CommentService commentService;
-    private final PostService postService; // ĐÃ THÊM VÀO ĐỂ DÙNG CHO SHARE
+    private final PostService postService;
 
-    // ================= API LIKE =================
+    // ================= API LIKE / REACTION =================
     @PostMapping("/{id}/like")
     public ResponseEntity<?> toggleLike(
             @PathVariable("id") Long postId,
+            @RequestParam(value = "reactionType", defaultValue = "LIKE") String reactionType, // NHẬN THÊM THAM SỐ NÀY
             @AuthenticationPrincipal UserDetails userDetails) {
         
         if (userDetails == null) {
@@ -34,12 +36,21 @@ public class PostApiController {
         }
 
         try {
-            boolean isLiked = postLikeService.toggleLike(postId, userDetails.getUsername());
-            long likeCount = postLikeService.countLikes(postId);
+            // GỌI HÀM toggleReaction THAY VÌ toggleLike
+            Map<String, Object> result = postLikeService.toggleReaction(
+                    postId, 
+                    userDetails.getUsername(), 
+                    ReactionType.valueOf(reactionType)
+            );
+
+            // Lấy dữ liệu từ kết quả trả về của Service
+            boolean isRemoved = (boolean) result.get("removed");
+            Object count = result.get("totalCount");
 
             return ResponseEntity.ok(Map.of(
-                    "liked", isLiked,
-                    "likeCount", likeCount
+                    "liked", !isRemoved, // Nếu bị removed = true thì liked = false
+                    "likeCount", count,
+                    "reactionType", reactionType
             ));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));

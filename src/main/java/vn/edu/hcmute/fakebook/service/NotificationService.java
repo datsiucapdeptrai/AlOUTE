@@ -23,7 +23,6 @@ public class NotificationService {
     private final UserAccountRepository userAccountRepository;
     private final SimpMessagingTemplate messagingTemplate;
 
-    // 1. Hàm gửi thông báo (Realtime + Lưu DB)
     public void sendNotification(UserAccount sender, UserAccount receiver, NotificationType type, 
                                  String message, Long referenceId, String targetUrl) {
         
@@ -47,21 +46,18 @@ public class NotificationService {
         messagingTemplate.convertAndSendToUser(receiver.getUsername(), "/queue/notifications", wsPayload);
     }
 
-    // 2. Hàm lấy số lượng chưa đọc (Cho Badge đỏ)
     public long getUnreadCount(String username) {
         UserAccount user = userAccountRepository.findByUsernameIgnoreCase(username)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy user"));
         return notificationRepository.countByRecipientAndReadFalse(user);
     }
 
-    // 3. Hàm lấy danh sách thông báo
     public Page<Notification> getNotifications(String username, int page) {
         UserAccount user = userAccountRepository.findByUsernameIgnoreCase(username)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy user"));
         return notificationRepository.findByRecipientOrderByCreatedAtDesc(user, PageRequest.of(Math.max(page, 0), 10));
     }
 
-    // 4. Hàm đánh dấu 1 thông báo đã đọc (Trả về link để Controller redirect)
     @Transactional
     public String markAsRead(Long id, String username) {
         UserAccount user = userAccountRepository.findByUsernameIgnoreCase(username)
@@ -75,12 +71,10 @@ public class NotificationService {
         return notification.getTargetUrl();
     }
 
-    // 5. Hàm đánh dấu tất cả đã đọc
     @Transactional
     public void markAllAsRead(String username) {
         UserAccount user = userAccountRepository.findByUsernameIgnoreCase(username)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy user"));
-        // Lấy tất cả thông báo chưa đọc và set thành đã đọc
         Page<Notification> page = notificationRepository.findByRecipientOrderByCreatedAtDesc(user, PageRequest.of(0, 1000));
         for (Notification n : page.getContent()) {
             if (!n.isRead()) {

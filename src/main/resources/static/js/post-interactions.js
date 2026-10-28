@@ -1,7 +1,7 @@
 (function () {
     "use strict";
 
-    // ============ REACTION ============
+    // ============ REACTION (LIKE) ============
     document.addEventListener("click", async function (event) {
         const btn = event.target.closest(".reaction-btn, .reaction-main-btn");
         if (!btn) return;
@@ -11,27 +11,21 @@
 
         const mainBtn = wrapper.querySelector(".reaction-main-btn");
         const postId = mainBtn.dataset.postId;
-        const currentReaction = mainBtn.dataset.userReaction || "";
-
-        let reactionType;
+        
+        // Xác định loại cảm xúc được chọn
+        let reactionType = "LIKE";
         if (btn.classList.contains("reaction-btn")) {
-            reactionType = btn.dataset.reaction;
+            reactionType = btn.dataset.reaction; 
         } else {
-            // Bấm nút chính: nếu chưa có reaction → LIKE, nếu có → toggle off
-            reactionType = currentReaction || "LIKE";
+            const currentReaction = mainBtn.dataset.userReaction;
+            reactionType = currentReaction ? currentReaction : "LIKE"; 
         }
 
         try {
-            const formData = new URLSearchParams();
-            formData.append("reactionType", reactionType);
-
-            const response = await fetch(`/posts/${postId}/reaction`, {
+            // Gọi API kèm theo reactionType
+            const response = await fetch(`/api/posts/${postId}/like?reactionType=${reactionType}`, {
                 method: "POST",
-                headers: {
-                    "X-Requested-With": "XMLHttpRequest",
-                    "Content-Type": "application/x-www-form-urlencoded"
-                },
-                body: formData
+                headers: { "Content-Type": "application/json" }
             });
 
             if (response.status === 401 || response.status === 403) {
@@ -40,20 +34,21 @@
             }
 
             const data = await response.json();
-            if (!data.success) throw new Error(data.message);
+            if (data.error) throw new Error(data.error);
 
-            // Cập nhật UI
             const iconSpan = mainBtn.querySelector(".reaction-icon");
             const labelSpan = mainBtn.querySelector(".reaction-label");
             const countSpan = document.getElementById(`like-count-${postId}`);
 
-            if (data.removed) {
+            if (!data.liked) {
+                // Trường hợp bấm lần 2 để bỏ Like (Unlike)
                 mainBtn.dataset.userReaction = "";
-                mainBtn.classList.remove("btn-primary");
+                mainBtn.classList.remove("btn-primary", "btn-danger", "btn-warning");
                 mainBtn.classList.add("btn-outline-primary");
                 iconSpan.textContent = "👍";
                 labelSpan.textContent = "Thích";
             } else {
+                // Trường hợp Like / Thả cảm xúc
                 const map = {
                     LIKE:  { icon: "👍", label: "Thích",     cls: "btn-primary" },
                     LOVE:  { icon: "❤️", label: "Yêu thích", cls: "btn-danger"  },
@@ -62,23 +57,23 @@
                     SAD:   { icon: "😢", label: "Buồn",      cls: "btn-warning" },
                     ANGRY: { icon: "😡", label: "Phẫn nộ",   cls: "btn-danger"  }
                 };
-                const info = map[data.reactionType] || map.LIKE;
-                mainBtn.dataset.userReaction = data.reactionType;
-                mainBtn.classList.remove("btn-outline-primary", "btn-primary",
-                                          "btn-danger", "btn-warning");
+                const info = map[reactionType] || map.LIKE;
+                
+                mainBtn.dataset.userReaction = reactionType;
+                mainBtn.classList.remove("btn-outline-primary", "btn-primary", "btn-danger", "btn-warning");
                 mainBtn.classList.add(info.cls);
                 iconSpan.textContent = info.icon;
                 labelSpan.textContent = info.label;
             }
 
-            if (countSpan) countSpan.textContent = data.totalCount;
+            if (countSpan) countSpan.textContent = data.likeCount;
 
         } catch (error) {
             alert(error.message || "Không thể thả cảm xúc.");
         }
     });
 
-    // ============ COMMENT ============
+    // ============ COMMENT (Giữ nguyên) ============
     document.addEventListener("submit", async function (event) {
         const form = event.target;
         if (!(form instanceof HTMLFormElement) || !form.classList.contains("comment-form")) return;
@@ -86,21 +81,24 @@
         event.preventDefault();
         const button = form.querySelector('button[type="submit"]');
         const input = form.querySelector('input[name="content"]');
-        const list = document.getElementById("comments-post-" + form.dataset.postId);
+        const postId = form.dataset.postId;
+        const list = document.getElementById("comments-post-" + postId);
+        
         if (!input.value.trim()) return;
         button.disabled = true;
 
         try {
-            const response = await fetch(form.action, {
+            const response = await fetch(`/api/posts/${postId}/comments`, {
                 method: "POST",
-                body: new FormData(form),
-                headers: { "Accept": "application/json", "X-Requested-With": "XMLHttpRequest" }
+                headers: { 
+                    "Content-Type": "application/json",
+                    "Accept": "application/json" 
+                },
+                body: JSON.stringify({ content: input.value })
             });
-            if (!(response.headers.get("content-type") || "").includes("application/json")) {
-                throw new Error("Máy chủ chưa trả JSON.");
-            }
+
             const data = await response.json();
-            if (!response.ok) throw new Error(data.message || "Không thể gửi bình luận.");
+            if (!response.ok) throw new Error(data.error || "Không thể gửi bình luận.");
 
             const item = document.createElement("div");
             item.className = "comment-box rounded p-2 mb-2";
