@@ -1,6 +1,7 @@
 package vn.edu.hcmute.fakebook.entity;
 
 import jakarta.persistence.Column;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -86,4 +87,7 @@ public class Post extends BaseEntity {
         length = 20
     )
     private PostStatus status = PostStatus.ACTIVE;
+    @ManyToOne
+    @JoinColumn(name = "original_post_id")
+    private Post originalPost; 
 }

@@ -14,6 +14,7 @@ import vn.edu.hcmute.fakebook.entity.VideoCategory;
 import vn.edu.hcmute.fakebook.enums.FriendshipStatus;
 import vn.edu.hcmute.fakebook.enums.PostStatus;
 import vn.edu.hcmute.fakebook.enums.PostVisibility;
+import vn.edu.hcmute.fakebook.enums.NotificationType;
 import vn.edu.hcmute.fakebook.repository.PostRepository;
 import vn.edu.hcmute.fakebook.repository.UserAccountRepository;
 import vn.edu.hcmute.fakebook.repository.FriendshipRepository;
@@ -27,28 +28,23 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final UserAccountRepository userAccountRepository;
-    private final FileStorageService fileStorageService;
     private final VideoCategoryRepository videoCategoryRepository;
     private final FriendshipRepository friendshipRepository;
+    private final NotificationService notificationService;
+    
+    // ĐÃ ĐỔI SANG CLOUDINARY STORAGE SERVICE
+    private final CloudinaryStorageService cloudinaryStorageService; 
 
     @Transactional
-    public void createPost(
-            String username,
-            CreatePostRequest request) {
-
+    public void createPost(String username, CreatePostRequest request) {
         UserAccount author = findUser(username);
 
-        boolean hasContent = request.getContent() != null
-            && !request.getContent().trim().isEmpty();
-        boolean hasImage = request.getImage() != null
-            && !request.getImage().isEmpty();
-        boolean hasVideo = request.getVideo() != null
-            && !request.getVideo().isEmpty();
+        boolean hasContent = request.getContent() != null && !request.getContent().trim().isEmpty();
+        boolean hasImage = request.getImage() != null && !request.getImage().isEmpty();
+        boolean hasVideo = request.getVideo() != null && !request.getVideo().isEmpty();
 
         if (!hasContent && !hasImage && !hasVideo) {
-            throw new IllegalArgumentException(
-                "Hãy nhập nội dung hoặc chọn ảnh/video để đăng"
-            );
+            throw new IllegalArgumentException("Hãy nhập nội dung hoặc chọn ảnh/video để đăng");
         }
 
         VideoCategory category = null;
@@ -61,25 +57,30 @@ public class PostService {
             }
             category = videoCategoryRepository
                 .findByIdAndActiveTrue(request.getVideoCategoryId())
-                .orElseThrow(() -> new IllegalArgumentException(
-                    "Thể loại video không tồn tại"
-                ));
+                .orElseThrow(() -> new IllegalArgumentException("Thể loại video không tồn tại"));
         }
 
-        PostVisibility visibility =
-            request.getVisibility() == null
-                ? PostVisibility.PUBLIC
+        PostVisibility visibility = request.getVisibility() == null 
+                ? PostVisibility.PUBLIC 
                 : request.getVisibility();
 
-        String imageUrl =
-            fileStorageService.storePostImage(
-                request.getImage()
-            );
-
-        String videoUrl = fileStorageService.storePostVideo(request.getVideo());
-        String videoPosterUrl = hasVideo
-            ? fileStorageService.storeVideoPoster(request.getVideoPoster())
-            : null;
+        // ========================================================
+        // UPLOAD LÊN CLOUDINARY THAY VÌ LOCAL
+        // ========================================================
+        String imageUrl = null;
+        if (hasImage) {
+            imageUrl = cloudinaryStorageService.uploadFile(request.getImage());
+        }
+        
+        String videoUrl = null;
+        if (hasVideo) {
+            videoUrl = cloudinaryStorageService.uploadFile(request.getVideo());
+        }
+        
+        String videoPosterUrl = null;
+        if (hasVideo && request.getVideoPoster() != null && !request.getVideoPoster().isEmpty()) {
+            videoPosterUrl = cloudinaryStorageService.uploadFile(request.getVideoPoster());
+        }
 
         Post post = new Post();
         post.setAuthor(author);
@@ -94,12 +95,9 @@ public class PostService {
 
         postRepository.save(post);
     }
-
+    
     @Transactional(readOnly = true)
-    public Page<Post> getVideoPosts(
-            String username,
-            Long categoryId,
-            int page) {
+    public Page<Post> getVideoPosts(String username, Long categoryId, int page) {
         UserAccount currentUser = findUser(username);
         return postRepository.findVisibleVideoPosts(
             currentUser.getId(),
@@ -112,45 +110,50 @@ public class PostService {
         );
     }
 
+    // Hàm này đã được bạn viết cực chuẩn để chặn xem lậu bài viết
     @Transactional(readOnly = true)
     public Post getVisiblePost(Long postId, String username) {
         UserAccount currentUser = findUser(username);
         Post post = postRepository.findPostDetailsById(postId)
-            .orElseThrow(() -> new IllegalArgumentException(
-                "Không tìm thấy bài viết"
-            ));
+            .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy bài viết"));
+        
         checkCanView(currentUser, post);
         return post;
     }
 
+    // Logic kiểm tra quyền xem (Chống IDOR)
     public void checkCanView(UserAccount currentUser, Post post) {
         if (post.getStatus() != PostStatus.ACTIVE) {
             throw new IllegalArgumentException("Bài viết không còn tồn tại");
         }
+        
+        // 1. Nếu là chủ bài viết hoặc bài PUBLIC -> Cho phép xem
         if (post.getAuthor().getId().equals(currentUser.getId())
                 || post.getVisibility() == PostVisibility.PUBLIC) {
             return;
         }
+        
+        // 2. Nếu là bài PRIVATE -> Chặn
         if (post.getVisibility() == PostVisibility.PRIVATE) {
             throw new AccessDeniedException("Bạn không có quyền xem bài viết này");
         }
 
+        // 3. Nếu là bài FRIENDS -> Kiểm tra xem có phải bạn bè không
         Long firstId = Math.min(currentUser.getId(), post.getAuthor().getId());
         Long secondId = Math.max(currentUser.getId(), post.getAuthor().getId());
+        
         boolean isFriend = friendshipRepository
             .findByUserOneIdAndUserTwoId(firstId, secondId)
             .filter(friendship -> friendship.getStatus() == FriendshipStatus.ACCEPTED)
             .isPresent();
+            
         if (!isFriend) {
             throw new AccessDeniedException("Chỉ bạn bè mới được xem bài viết này");
         }
     }
 
     @Transactional(readOnly = true)
-    public Page<Post> getFeedPosts(
-            String username,
-            int page) {
-
+    public Page<Post> getFeedPosts(String username, int page) {
         UserAccount currentUser = findUser(username);
         int validPage = Math.max(page, 0);
 
@@ -165,26 +168,14 @@ public class PostService {
     }
 
     @Transactional
-    public void deletePost(
-            Long postId,
-            String username) {
+    public void deletePost(Long postId, String username) {
+        Post post = postRepository.findById(postId)
+            .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy bài viết"));
 
-        Post post = postRepository
-            .findById(postId)
-            .orElseThrow(() ->
-                new IllegalArgumentException(
-                    "Không tìm thấy bài viết"
-                )
-            );
-
-        boolean isAuthor = post.getAuthor()
-            .getUsername()
-            .equalsIgnoreCase(username);
+        boolean isAuthor = post.getAuthor().getUsername().equalsIgnoreCase(username);
 
         if (!isAuthor) {
-            throw new AccessDeniedException(
-                "Bạn không có quyền xóa bài viết này"
-            );
+            throw new AccessDeniedException("Bạn không có quyền xóa bài viết này");
         }
 
         post.setStatus(PostStatus.DELETED);
@@ -192,22 +183,12 @@ public class PostService {
     }
 
     private UserAccount findUser(String username) {
-        return userAccountRepository
-            .findByUsernameIgnoreCase(username)
-            .orElseThrow(() ->
-                new IllegalStateException(
-                    "Không tìm thấy người dùng"
-                )
-            );
+        return userAccountRepository.findByUsernameIgnoreCase(username)
+            .orElseThrow(() -> new IllegalStateException("Không tìm thấy người dùng"));
     }
-    @Transactional(readOnly = true)
-    public Page<Post> searchFeedPosts(
-            String username,
-            String keyword,
-            String type,
-            String sort,
-            int page) {
 
+    @Transactional(readOnly = true)
+    public Page<Post> searchFeedPosts(String username, String keyword, String type, String sort, int page) {
         UserAccount currentUser = findUser(username);
         int validPage = Math.max(page, 0);
 
@@ -240,5 +221,28 @@ public class PostService {
             FriendshipStatus.ACCEPTED,
             pageable
         );
+    }
+    
+    @Transactional
+    public Post sharePost(Long originalPostId, String username, String caption) {
+        UserAccount currentUser = findUser(username);
+        
+        Post originalPost = postRepository.findById(originalPostId)
+                .orElseThrow(() -> new IllegalArgumentException("Bài viết gốc không tồn tại"));
+
+        // 1. Tạo bài viết mới (bài share)
+        Post sharedPost = new Post();
+        sharedPost.setAuthor(currentUser);
+        sharedPost.setContent(caption == null ? "" : caption.trim());
+        sharedPost.setVisibility(PostVisibility.PUBLIC); // Thường share là public
+        sharedPost.setStatus(PostStatus.ACTIVE);
+        sharedPost.setOriginalPost(originalPost); // Trỏ đến bài gốc
+        
+        // 2. Tăng lượt share của bài gốc lên 1
+        originalPost.setShareCount(originalPost.getShareCount() + 1);
+        postRepository.save(originalPost);
+
+        // 3. Lưu bài share
+        return postRepository.save(sharedPost);
     }
 }

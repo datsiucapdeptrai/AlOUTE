@@ -16,6 +16,7 @@ import vn.edu.hcmute.fakebook.entity.UserAccount;
 import vn.edu.hcmute.fakebook.enums.AccountStatus;
 import vn.edu.hcmute.fakebook.enums.FriendshipStatus;
 import vn.edu.hcmute.fakebook.enums.NotificationType;
+import vn.edu.hcmute.fakebook.enums.RoleName; // THÊM IMPORT NÀY
 import vn.edu.hcmute.fakebook.repository.FriendshipRepository;
 import vn.edu.hcmute.fakebook.repository.UserAccountRepository;
 
@@ -248,7 +249,7 @@ public class FriendshipService {
     }
 
     // =====================================================
-    // GỢI Ý KẾT BẠN - LẤY USER (đã sửa)
+    // GỢI Ý KẾT BẠN - LẤY USER (ĐÃ CẬP NHẬT BỘ LỌC)
     // =====================================================
     @Transactional(readOnly = true)
     public List<UserAccount> getFriendSuggestionUsers(
@@ -257,7 +258,6 @@ public class FriendshipService {
 
         UserAccount currentUser = findUser(currentUsername);
 
-        // ✅ Lấy ID bạn bè TRỰC TIẾP từ repository (không qua getFriends())
         List<Long> friendIds = friendshipRepository
             .findAcceptedFriendIds(currentUser.getId());
 
@@ -265,15 +265,24 @@ public class FriendshipService {
             return List.of();
         }
 
-        return friendshipRepository.findFriendSuggestions(
+        // Lấy số lượng gợi ý nhiều hơn một chút (limit * 3) để sau khi lọc Admin/Manager vẫn đủ số lượng
+        List<UserAccount> suggestions = friendshipRepository.findFriendSuggestions(
             currentUser.getId(),
             friendIds,
-            PageRequest.of(0, limit)
+            PageRequest.of(0, limit * 3) 
         );
+
+        // BỘ LỌC: Loại bỏ hoàn toàn Admin và Manager
+        return suggestions.stream()
+            .filter(user -> user.getRoles().stream().noneMatch(role -> 
+                role.getName() == RoleName.ROLE_ADMIN || role.getName() == RoleName.ROLE_MANAGER
+            ))
+            .limit(limit)
+            .toList();
     }
 
     // =====================================================
-    // GỢI Ý KẾT BẠN - MAP userId -> số bạn chung
+    // GỢI Ý KẾT BẠN - MAP userId -> số bạn chung (ĐÃ CẬP NHẬT BỘ LỌC)
     // =====================================================
     @Transactional(readOnly = true)
     public Map<Long, Long> getFriendSuggestions(
@@ -289,12 +298,19 @@ public class FriendshipService {
             return Map.of();
         }
 
+        // Áp dụng bộ lọc tương tự
         List<UserAccount> suggestions = friendshipRepository
             .findFriendSuggestions(
                 currentUser.getId(),
                 friendIds,
-                PageRequest.of(0, limit)
-            );
+                PageRequest.of(0, limit * 3)
+            )
+            .stream()
+            .filter(user -> user.getRoles().stream().noneMatch(role -> 
+                role.getName() == RoleName.ROLE_ADMIN || role.getName() == RoleName.ROLE_MANAGER
+            ))
+            .limit(limit)
+            .toList();
 
         Map<Long, Long> result = new LinkedHashMap<>();
         for (UserAccount suggestion : suggestions) {

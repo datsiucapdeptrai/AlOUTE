@@ -12,8 +12,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const composer = document.getElementById("chatComposer");
     const input = document.getElementById("chatInput");
     const sendButton = document.getElementById("chatSendButton");
-    const backdrop = document.getElementById("chatBackdrop");
-    const launcher = document.getElementById("chatLauncher");
 
     let friends = [];
     let unreadCounts = {};
@@ -43,9 +41,8 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     async function readJson(response) {
-        if (!(response.headers.get("content-type") || "")
-                .includes("application/json")) {
-            throw new Error("Máy chủ chưa trả dữ liệu chat. Hãy kiểm tra DirectMessageController.");
+        if (!(response.headers.get("content-type") || "").includes("application/json")) {
+            throw new Error("Máy chủ chưa trả dữ liệu chat.");
         }
         const data = await response.json();
         if (!response.ok) throw new Error(data.message || "Không thể tải dữ liệu chat.");
@@ -60,29 +57,33 @@ document.addEventListener("DOMContentLoaded", function () {
         const date = new Date(value);
         return Number.isNaN(date.getTime())
             ? (value || "")
-            : date.toLocaleString("vi-VN", {
-                day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit"
-            });
+            : date.toLocaleString("vi-VN", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
     }
 
     function setError(message) {
-        errorBox.textContent = message || "";
-        errorBox.classList.toggle("d-none", !message);
+        if(errorBox) {
+            errorBox.textContent = message || "";
+            errorBox.classList.toggle("d-none", !message);
+        }
     }
 
+    // HÀM MỞ / ĐÓNG / BẬT TẮT SIDEBAR
     function openSidebar() {
-        if (window.innerWidth >= 1200) {
-            search.focus();
-            return;
-        }
         sidebar.classList.add("is-open");
-        backdrop.classList.remove("d-none");
         search.focus();
+        loadContacts(); // Tự động tải lại danh sách khi mở
     }
 
     function closeSidebar() {
         sidebar.classList.remove("is-open");
-        backdrop.classList.add("d-none");
+    }
+
+    function toggleSidebar() {
+        if (sidebar.classList.contains("is-open")) {
+            closeSidebar();
+        } else {
+            openSidebar();
+        }
     }
 
     function renderContacts() {
@@ -90,27 +91,19 @@ document.addEventListener("DOMContentLoaded", function () {
         const keyword = search.value.trim().toLocaleLowerCase("vi-VN");
         const visible = [...friends]
             .sort((a, b) =>
-                (Number(unreadCounts[b.userId]) || 0) -
-                (Number(unreadCounts[a.userId]) || 0) ||
-                (a.fullName || a.username || "").localeCompare(
-                    b.fullName || b.username || "", "vi-VN"
-                )
+                (Number(unreadCounts[b.userId]) || 0) - (Number(unreadCounts[a.userId]) || 0) ||
+                (a.fullName || a.username || "").localeCompare(b.fullName || b.username || "", "vi-VN")
             )
             .filter(friend => {
-                const matches = (friend.fullName || "").toLocaleLowerCase("vi-VN")
-                    .includes(keyword) || (friend.username || "").toLocaleLowerCase("vi-VN")
-                    .includes(keyword);
+                const matches = (friend.fullName || "").toLocaleLowerCase("vi-VN").includes(keyword) || 
+                                (friend.username || "").toLocaleLowerCase("vi-VN").includes(keyword);
                 return matches && (filter === "all" || Number(unreadCounts[friend.userId]) > 0);
             });
 
         if (visible.length === 0) {
             const empty = document.createElement("p");
-            empty.className = "text-center small p-3 mb-0";
-            empty.textContent = contactError || (keyword
-                ? "Không tìm thấy bạn bè."
-                : filter === "unread"
-                    ? "Không có tin nhắn chưa đọc."
-                    : "Chưa có bạn bè để trò chuyện.");
+            empty.className = "text-center small p-3 mb-0 text-white-50";
+            empty.textContent = contactError || (keyword ? "Không tìm thấy bạn bè." : filter === "unread" ? "Không có tin nhắn chưa đọc." : "Chưa có bạn bè để trò chuyện.");
             contacts.appendChild(empty);
             return;
         }
@@ -133,8 +126,7 @@ document.addEventListener("DOMContentLoaded", function () {
             name.textContent = friend.fullName || friend.username;
             const preview = document.createElement("span");
             preview.className = "chat-preview";
-            preview.textContent = previews.get(String(friend.userId)) ||
-                "@" + friend.username + " · Nhấn để trò chuyện";
+            preview.textContent = previews.get(String(friend.userId)) || "@" + friend.username + " · Nhấn để trò chuyện";
             details.append(name, preview);
             button.append(avatar, details);
 
@@ -143,7 +135,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 const badge = document.createElement("span");
                 badge.className = "chat-unread small";
                 badge.textContent = String(count);
-                badge.setAttribute("aria-label", count + " tin chưa đọc");
                 button.appendChild(badge);
             }
             button.addEventListener("click", () => openConversation(friend));
@@ -194,8 +185,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (own) {
             const status = document.createElement("small");
             status.className = "chat-message-meta read-status";
-            status.textContent = message.read || Number(id) <= lastReadId
-                ? "Đã xem" : "Đã gửi";
+            status.textContent = message.read || Number(id) <= lastReadId ? "Đã xem" : "Đã gửi";
             bubble.appendChild(status);
         }
         row.appendChild(bubble);
@@ -223,11 +213,8 @@ document.addEventListener("DOMContentLoaded", function () {
         const previousTop = scroll.scrollTop;
 
         try {
-            const url = sidebar.dataset.historyUrl + "/" +
-                encodeURIComponent(friendId) + "?page=" + page;
-            const response = await fetch(url, {
-                headers: { "Accept": "application/json" }, credentials: "same-origin"
-            });
+            const url = sidebar.dataset.historyUrl + "/" + encodeURIComponent(friendId) + "?page=" + page;
+            const response = await fetch(url, { headers: { "Accept": "application/json" }, credentials: "same-origin" });
             const data = await readJson(response);
             if (generation !== historyGeneration) return;
 
@@ -286,12 +273,9 @@ document.addEventListener("DOMContentLoaded", function () {
         olderButton.classList.add("d-none");
         setError("");
 
-        document.getElementById("chatPartnerName").textContent =
-            friend.fullName || friend.username;
-        document.getElementById("chatPartnerAvatar").textContent =
-            firstLetter(friend.fullName || friend.username);
-        document.getElementById("chatFullLink").href =
-            baseUrl + "/" + encodeURIComponent(friend.userId);
+        document.getElementById("chatPartnerName").textContent = friend.fullName || friend.username;
+        document.getElementById("chatPartnerAvatar").textContent = firstLetter(friend.fullName || friend.username);
+        document.getElementById("chatFullLink").href = baseUrl + "/" + encodeURIComponent(friend.userId);
         popup.classList.remove("d-none");
         closeSidebar();
         input.focus();
@@ -306,17 +290,12 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function scheduleRead(friendId) {
-        if (document.visibilityState !== "visible" || popup.classList.contains("d-none"))
-            return;
+        if (document.visibilityState !== "visible" || popup.classList.contains("d-none")) return;
         clearTimeout(readTimer);
         readTimer = setTimeout(async function () {
-            if (!activeFriend || String(activeFriend.userId) !== String(friendId) ||
-                    document.visibilityState !== "visible") return;
+            if (!activeFriend || String(activeFriend.userId) !== String(friendId) || document.visibilityState !== "visible") return;
             try {
-                const response = await fetch(
-                    baseUrl + "/" + encodeURIComponent(friendId) + "/read",
-                    { method: "POST", headers: postHeaders(), credentials: "same-origin" }
-                );
+                const response = await fetch(baseUrl + "/" + encodeURIComponent(friendId) + "/read", { method: "POST", headers: postHeaders(), credentials: "same-origin" });
                 if (!response.ok) throw new Error("Không thể đánh dấu tin đã đọc.");
                 unreadCounts[friendId] = 0;
                 renderContacts();
@@ -338,9 +317,7 @@ document.addEventListener("DOMContentLoaded", function () {
         try {
             const response = await fetch(baseUrl + "/" + encodeURIComponent(friendId), {
                 method: "POST", credentials: "same-origin",
-                headers: {
-                    ...postHeaders(), "X-Requested-With": "XMLHttpRequest"
-                },
+                headers: { ...postHeaders(), "X-Requested-With": "XMLHttpRequest" },
                 body: new URLSearchParams({ content })
             });
             const data = await readJson(response);
@@ -360,10 +337,23 @@ document.addEventListener("DOMContentLoaded", function () {
     olderButton.addEventListener("click", function () {
         if (!historyLoading && hasOlder) loadHistory(currentPage + 1, historyGeneration);
     });
-    document.getElementById("chatWindowClose").addEventListener("click", closeConversation);
-    document.getElementById("chatSidebarClose").addEventListener("click", closeSidebar);
-    backdrop.addEventListener("click", closeSidebar);
-    launcher.addEventListener("click", openSidebar);
+    
+    // Gắn sự kiện cho các nút Đóng
+    const windowCloseBtn = document.getElementById("chatWindowClose");
+    if (windowCloseBtn) windowCloseBtn.addEventListener("click", closeConversation);
+    
+    const sidebarCloseBtn = document.getElementById("chatSidebarClose");
+    if (sidebarCloseBtn) sidebarCloseBtn.addEventListener("click", closeSidebar);
+    
+    // Bắt sự kiện nút Đoạn chat trên Navbar
+    const chatNavbarBtn = document.getElementById("chatNavbarButton");
+    if (chatNavbarBtn) {
+        chatNavbarBtn.addEventListener("click", function (event) {
+            event.preventDefault(); // Ngăn chuyển trang
+            toggleSidebar();
+        });
+    }
+
     search.addEventListener("input", renderContacts);
     document.querySelectorAll("[data-chat-filter]").forEach(button => {
         button.addEventListener("click", function () {
@@ -375,21 +365,13 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
-    document.getElementById("chatNavbarButton").addEventListener("click", function (event) {
-        if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey)
-            return;
-        event.preventDefault();
-        openSidebar();
-    });
-
     document.addEventListener("fakebook:incoming-message", function (event) {
         const message = event.detail;
         if (!message || message.id == null || message.senderId == null) return;
         const senderId = String(message.senderId);
         previews.set(senderId, message.content);
 
-        if (activeFriend && String(activeFriend.userId) === senderId &&
-                !popup.classList.contains("d-none")) {
+        if (activeFriend && String(activeFriend.userId) === senderId && !popup.classList.contains("d-none")) {
             if (historyLoading) pendingMessages.push(message);
             else appendMessage(message);
             if (document.visibilityState === "visible") scheduleRead(senderId);
@@ -402,8 +384,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     document.addEventListener("fakebook:message-read", function (event) {
         const receipt = event.detail;
-        if (!activeFriend || String(receipt?.readerId) !== String(activeFriend.userId))
-            return;
+        if (!activeFriend || String(receipt?.readerId) !== String(activeFriend.userId)) return;
         const id = Number(receipt.readUpToId);
         if (!Number.isSafeInteger(id)) return;
         lastReadId = Math.max(lastReadId, id);
@@ -422,10 +403,8 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
     window.addEventListener("focus", loadContacts);
-    window.addEventListener("resize", function () {
-        if (window.innerWidth >= 1200) closeSidebar();
-    });
 
+    // Khởi tạo lần đầu
     renderContacts();
     loadContacts();
 });

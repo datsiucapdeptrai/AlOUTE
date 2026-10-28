@@ -1,6 +1,7 @@
 package vn.edu.hcmute.fakebook.service;
 
 import java.util.HashMap;
+
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -188,5 +189,32 @@ public class PostLikeService {
     private UserAccount findUser(String username) {
         return userAccountRepository.findByUsernameIgnoreCase(username)
             .orElseThrow(() -> new IllegalStateException("Không tìm thấy người dùng"));
+    }
+    @Transactional
+    public boolean toggleLike(Long postId, String username) {
+        UserAccount user = userAccountRepository.findByUsernameIgnoreCase(username)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy user"));
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy bài viết"));
+
+        // Tìm xem user này đã like bài này chưa
+        Optional<PostLike> existingLike = postLikeRepository.findByPostIdAndUserId(postId, user.getId());
+
+        if (existingLike.isPresent()) {
+            // Nếu có rồi -> Xóa (Unlike)
+            postLikeRepository.delete(existingLike.get());
+            return false;
+        } else {
+            // Nếu chưa có -> Thêm mới
+            PostLike newLike = new PostLike();
+            newLike.setPost(post);
+            newLike.setUser(user); // Nếu Entity của bạn tên là setAuthor thì đổi lại nhé
+            postLikeRepository.save(newLike);
+            return true;
+        }
+    }
+
+    public long countLikes(Long postId) {
+        return postLikeRepository.countByPostId(postId);
     }
 }

@@ -15,6 +15,8 @@ import vn.edu.hcmute.fakebook.dto.RegisterRequest;
 import vn.edu.hcmute.fakebook.entity.UserAccount;
 import vn.edu.hcmute.fakebook.service.AuthService;
 import vn.edu.hcmute.fakebook.service.EmailVerificationService;
+import vn.edu.hcmute.fakebook.enums.OtpType;
+import vn.edu.hcmute.fakebook.service.OtpService;
 
 @Controller
 @RequiredArgsConstructor
@@ -22,6 +24,8 @@ public class AuthController {
 
     private final AuthService authService;
     private final EmailVerificationService verificationService;
+    private final OtpService otpService;
+    
 
     @GetMapping("/register")
     public String showRegisterPage(Model model) {
@@ -38,8 +42,7 @@ public class AuthController {
 
     @PostMapping("/register")
     public String register(
-            @Valid @ModelAttribute("registerRequest")
-            RegisterRequest request,
+            @Valid @ModelAttribute("registerRequest") RegisterRequest request,
             BindingResult bindingResult,
             Model model,
             RedirectAttributes redirectAttributes) {
@@ -49,15 +52,21 @@ public class AuthController {
         }
 
         try {
-            UserAccount user = authService.register(request);
+            // 1. Lưu user vào DB với trạng thái DISABLED
+          
+            UserAccount user = authService.registerPendingUser(request); 
+            
+            // 2. GỌI HÀM GỬI OTP 
+            otpService.generateAndSendOtp(user.getEmail(), OtpType.REGISTER);
+
             redirectAttributes.addAttribute("email", user.getEmail());
             redirectAttributes.addFlashAttribute(
-                "successMessage",
-                "Hãy nhập OTP đã gửi đến email của bạn."
+                    "successMessage",
+                    "Hãy nhập OTP đã gửi đến email của bạn."
             );
             return "redirect:/verify";
-        } catch (IllegalArgumentException
-                | IllegalStateException exception) {
+            
+        } catch (IllegalArgumentException | IllegalStateException exception) {
             model.addAttribute("registerError", exception.getMessage());
             return "auth/register";
         }

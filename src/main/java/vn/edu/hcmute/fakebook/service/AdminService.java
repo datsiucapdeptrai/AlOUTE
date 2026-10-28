@@ -35,18 +35,11 @@ public class AdminService {
     // =====================================================
     @Transactional(readOnly = true)
     public AdminDashboardDto getDashboardStatistics() {
-
         long totalUsers = userAccountRepository.count();
-
         long totalPosts = postRepository.countByStatus(PostStatus.ACTIVE);
-
-        long totalVideos = postRepository
-            .countByVideoUrlIsNotNullAndStatus(PostStatus.ACTIVE);
-
+        long totalVideos = postRepository.countByVideoUrlIsNotNullAndStatus(PostStatus.ACTIVE);
         long totalComments = commentRepository.countByStatus(CommentStatus.ACTIVE);
-
         long totalViews = postRepository.sumViewCountByStatus(PostStatus.ACTIVE);
-
         long totalShares = postRepository.sumShareCountByStatus(PostStatus.ACTIVE);
 
         return new AdminDashboardDto(
@@ -64,7 +57,6 @@ public class AdminService {
     // =====================================================
     @Transactional(readOnly = true)
     public Page<UserAccount> getUsers(String keyword, int page, int size) {
-
         String searchKeyword = keyword == null ? "" : keyword.trim();
         Pageable pageable = PageRequest.of(page, size);
 
@@ -79,17 +71,11 @@ public class AdminService {
 
     @Transactional
     public void toggleUserStatus(Long userId, String currentUsername) {
-
-        UserAccount user = userAccountRepository
-            .findById(userId)
-            .orElseThrow(() ->
-                new IllegalArgumentException("Không tìm thấy tài khoản")
-            );
+        UserAccount user = userAccountRepository.findById(userId)
+            .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản"));
 
         if (user.getUsername().equalsIgnoreCase(currentUsername)) {
-            throw new IllegalArgumentException(
-                "Bạn không thể khóa tài khoản đang đăng nhập"
-            );
+            throw new IllegalArgumentException("Bạn không thể khóa tài khoản đang đăng nhập");
         }
 
         if (user.getStatus() == AccountStatus.LOCKED) {
@@ -101,28 +87,32 @@ public class AdminService {
         userAccountRepository.save(user);
     }
 
-    // =====================================================
-    // ĐỔI ROLE USER (CHỈ GIỮ LẠI 1 METHOD NÀY)
-    // =====================================================
+    // THÊM HÀM MỚI: Kích hoạt tài khoản thủ công
     @Transactional
-    public void changeUserRole(
-            Long userId,
-            String roleName,
-            String currentUsername) {
+    public void activateUser(Long userId) {
+        UserAccount user = userAccountRepository.findById(userId)
+            .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản"));
 
-        UserAccount user = userAccountRepository
-            .findById(userId)
-            .orElseThrow(() ->
-                new IllegalArgumentException("Không tìm thấy tài khoản")
-            );
-
-        if (user.getUsername().equalsIgnoreCase(currentUsername)) {
-            throw new IllegalArgumentException(
-                "Bạn không thể đổi role của chính mình"
-            );
+        if (user.getStatus() == AccountStatus.ACTIVE) {
+            throw new IllegalArgumentException("Tài khoản này đã được kích hoạt rồi.");
         }
 
-        // Chuẩn hóa input: tự động thêm ROLE_ nếu chưa có
+        user.setStatus(AccountStatus.ACTIVE);
+        userAccountRepository.save(user);
+    }
+
+    // =====================================================
+    // ĐỔI ROLE USER
+    // =====================================================
+    @Transactional
+    public void changeUserRole(Long userId, String roleName, String currentUsername) {
+        UserAccount user = userAccountRepository.findById(userId)
+            .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản"));
+
+        if (user.getUsername().equalsIgnoreCase(currentUsername)) {
+            throw new IllegalArgumentException("Bạn không thể đổi role của chính mình");
+        }
+
         String normalized = roleName == null ? "" : roleName.trim().toUpperCase();
         if (!normalized.startsWith("ROLE_")) {
             normalized = "ROLE_" + normalized;
@@ -135,13 +125,9 @@ public class AdminService {
             throw new IllegalArgumentException("Role không hợp lệ: " + roleName);
         }
 
-        // Xóa hết role cũ, chỉ giữ 1 role mới
         user.getRoles().clear();
-
         Role role = roleRepository.findByName(newRole)
-            .orElseThrow(() ->
-                new IllegalArgumentException("Role không tồn tại trong DB")
-            );
+            .orElseThrow(() -> new IllegalArgumentException("Role không tồn tại trong DB"));
 
         user.addRole(role);
         userAccountRepository.save(user);
@@ -152,36 +138,22 @@ public class AdminService {
     // =====================================================
     @Transactional(readOnly = true)
     public Page<Post> getPosts(String keyword, int page, int size) {
-
         String searchKeyword = keyword == null ? "" : keyword.trim();
-        return postRepository.searchForAdmin(
-            searchKeyword,
-            PageRequest.of(page, size)
-        );
+        return postRepository.searchForAdmin(searchKeyword, PageRequest.of(page, size));
     }
 
     @Transactional
     public void deletePost(Long postId) {
-
-        Post post = postRepository
-            .findById(postId)
-            .orElseThrow(() ->
-                new IllegalArgumentException("Không tìm thấy bài viết")
-            );
-
+        Post post = postRepository.findById(postId)
+            .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy bài viết"));
         post.setStatus(PostStatus.DELETED);
         postRepository.save(post);
     }
 
     @Transactional
     public void restorePost(Long postId) {
-
-        Post post = postRepository
-            .findById(postId)
-            .orElseThrow(() ->
-                new IllegalArgumentException("Không tìm thấy bài viết")
-            );
-
+        Post post = postRepository.findById(postId)
+            .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy bài viết"));
         post.setStatus(PostStatus.ACTIVE);
         postRepository.save(post);
     }
@@ -191,36 +163,22 @@ public class AdminService {
     // =====================================================
     @Transactional(readOnly = true)
     public Page<Comment> getComments(String keyword, int page, int size) {
-
         String searchKeyword = keyword == null ? "" : keyword.trim();
-        return commentRepository.searchForAdmin(
-            searchKeyword,
-            PageRequest.of(page, size)
-        );
+        return commentRepository.searchForAdmin(searchKeyword, PageRequest.of(page, size));
     }
 
     @Transactional
     public void deleteComment(Long commentId) {
-
-        Comment comment = commentRepository
-            .findById(commentId)
-            .orElseThrow(() ->
-                new IllegalArgumentException("Không tìm thấy bình luận")
-            );
-
+        Comment comment = commentRepository.findById(commentId)
+            .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy bình luận"));
         comment.setStatus(CommentStatus.DELETED);
         commentRepository.save(comment);
     }
 
     @Transactional
     public void restoreComment(Long commentId) {
-
-        Comment comment = commentRepository
-            .findById(commentId)
-            .orElseThrow(() ->
-                new IllegalArgumentException("Không tìm thấy bình luận")
-            );
-
+        Comment comment = commentRepository.findById(commentId)
+            .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy bình luận"));
         comment.setStatus(CommentStatus.ACTIVE);
         commentRepository.save(comment);
     }
@@ -230,10 +188,6 @@ public class AdminService {
     // =====================================================
     @Transactional(readOnly = true)
     public Page<Post> getVideos(int page, int size) {
-
-        return postRepository.findByVideoUrlIsNotNullAndStatus(
-            PostStatus.ACTIVE,
-            PageRequest.of(page, size)
-        );
+        return postRepository.findByVideoUrlIsNotNullAndStatus(PostStatus.ACTIVE, PageRequest.of(page, size));
     }
 }

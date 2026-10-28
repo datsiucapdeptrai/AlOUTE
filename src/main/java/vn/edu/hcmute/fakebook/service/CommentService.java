@@ -34,6 +34,16 @@ public class CommentService {
     private final FriendshipRepository friendshipRepository;
     private final NotificationService notificationService;
 
+    // ==============================================================
+    // HÀM MỚI THÊM: Để PostApiController gọi được (khớp tham số)
+    // ==============================================================
+    @Transactional
+    public Comment addComment(Long postId, String content, String username) {
+        // Gọi lại hàm createComment có sẵn của bạn, chỉ đổi vị trí tham số
+        return createComment(postId, username, content);
+    }
+
+    // Hàm gốc của bạn (Giữ nguyên)
     @Transactional
     public Comment createComment(Long postId, String username, String content) {
         if (content == null || content.trim().isEmpty()) {

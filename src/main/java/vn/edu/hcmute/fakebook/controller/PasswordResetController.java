@@ -1,92 +1,63 @@
 package vn.edu.hcmute.fakebook.controller;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
-import lombok.RequiredArgsConstructor;
-import vn.edu.hcmute.fakebook.service.PasswordResetService;
+import org.springframework.web.bind.annotation.*;
+import vn.edu.hcmute.fakebook.enums.OtpType;
+import vn.edu.hcmute.fakebook.service.AuthService;
+import vn.edu.hcmute.fakebook.service.OtpService;
 
 @Controller
 @RequiredArgsConstructor
 public class PasswordResetController {
 
-    private final PasswordResetService passwordResetService;
+    private final AuthService authService;
+    private final OtpService otpService;
 
     @GetMapping("/forgot-password")
-    public String forgotPage() {
+    public String showForgotForm() {
         return "auth/forgot-password";
     }
 
+    // Nhận email -> Gửi OTP -> Chuyển sang trang reset mật khẩu
     @PostMapping("/forgot-password")
-    public String requestOtp(
-            @RequestParam("email") String email,
-            Model model,
-            RedirectAttributes redirectAttributes) {
-        try {
-            passwordResetService.requestOtp(email);
-            redirectAttributes.addAttribute("email", email.trim());
-            redirectAttributes.addFlashAttribute(
-                "successMessage",
-                "OTP đặt lại mật khẩu đã được gửi đến Gmail."
-            );
-            return "redirect:/reset-password";
-        } catch (IllegalArgumentException
-                | IllegalStateException exception) {
+    public String processForgot(@RequestParam String email, Model model) {
+        if (!authService.isEmailExists(email)) {
+            model.addAttribute("errorMessage", "Email không tồn tại trong hệ thống!");
             model.addAttribute("email", email);
-            model.addAttribute("errorMessage", exception.getMessage());
             return "auth/forgot-password";
         }
+
+        otpService.generateAndSendOtp(email, OtpType.FORGOT_PASSWORD);
+        
+        // Chuyển sang trang nhập OTP + pass mới
+        model.addAttribute("email", email);
+        model.addAttribute("successMessage", "Mã OTP đã được gửi tới email của bạn.");
+        return "auth/reset-password"; 
     }
 
-    @GetMapping("/reset-password")
-    public String resetPage(
-            @RequestParam(name = "email", required = false) String email,
-            Model model) {
-        model.addAttribute("email", email == null ? "" : email);
-        return "auth/reset-password";
-    }
-
+    // Xử lý khi bấm "Đổi mật khẩu" ở trang reset-password
     @PostMapping("/reset-password")
-    public String resetPassword(
-            @RequestParam("email") String email,
-            @RequestParam("otp") String otp,
-            @RequestParam("password") String password,
-            @RequestParam("confirmPassword") String confirmPassword,
-            Model model) {
-        try {
-            passwordResetService.resetPassword(
-                email,
-                otp,
-                password,
-                confirmPassword
-            );
-            return "redirect:/login?resetSuccess";
-        } catch (IllegalArgumentException exception) {
+    public String processReset(@RequestParam String email,
+                               @RequestParam String otpCode,
+                               @RequestParam String newPassword,
+                               @RequestParam String confirmPassword,
+                               Model model) {
+        
+        if (!newPassword.equals(confirmPassword)) {
             model.addAttribute("email", email);
-            model.addAttribute("errorMessage", exception.getMessage());
+            model.addAttribute("errorMessage", "Mật khẩu xác nhận không khớp!");
             return "auth/reset-password";
         }
-    }
 
-    @PostMapping("/reset-password/resend")
-    public String resendResetOtp(
-            @RequestParam("email") String email,
-            Model model) {
-        try {
-            passwordResetService.requestOtp(email);
-            model.addAttribute(
-                "successMessage",
-                "OTP đặt lại mật khẩu mới đã được gửi."
-            );
-        } catch (IllegalArgumentException
-                | IllegalStateException exception) {
-            model.addAttribute("errorMessage", exception.getMessage());
+        if (!otpService.verifyOtp(email, otpCode, OtpType.FORGOT_PASSWORD)) {
+            model.addAttribute("email", email);
+            model.addAttribute("errorMessage", "Mã OTP không đúng hoặc đã hết hạn!");
+            return "auth/reset-password";
         }
-        model.addAttribute("email", email);
-        return "auth/reset-password";
+
+        authService.updatePassword(email, newPassword);
+        return "redirect:/login?resetSuccess";
     }
 }

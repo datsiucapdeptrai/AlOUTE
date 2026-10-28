@@ -2,6 +2,7 @@ package vn.edu.hcmute.fakebook.repository;
 
 import java.util.List;
 
+
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -16,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 
 
 import vn.edu.hcmute.fakebook.entity.UserAccount;
+
 
 public interface FriendshipRepository
         extends JpaRepository<Friendship, Long> {
@@ -145,4 +147,8 @@ public interface FriendshipRepository
     	      AND (f.userOne.id = :userId OR f.userTwo.id = :userId)
     	    """)
     	List<Long> findAcceptedFriendIds(@Param("userId") Long userId);
+    @Query("SELECT COUNT(f) > 0 FROM Friendship f WHERE f.status = 'ACCEPTED' AND " +
+            "((f.userOne.id = :u1 AND f.userTwo.id = :u2) OR (f.userOne.id = :u2 AND f.userTwo.id = :u1))")
+     boolean areFriends(@Param("u1") Long u1, @Param("u2") Long u2);
 }
+	

@@ -1,0 +1,32 @@
+# --- SPRING BOOT / MAVEN ---
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+.mvn/
+mvnw
+mvnw.cmd
+
+# --- BẢO MẬT (QUAN TRỌNG NHẤT) ---
+# Không đẩy file chứa mật khẩu DB, Email, API Key lên Github
+src/main/resources/application.properties
+src/main/resources/application.yml
+src/main/resources/serviceAccountKey.json
+
+# --- INTELLIJ IDEA ---
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# --- VS CODE ---
+.vscode/
+
+# --- LOGS & OS ---
+*.log
+logs/
+.DS_Store
+Thumbs.db
+
+# --- UPLOADS (Nếu bạn còn lưu ảnh ở local) ---
+uploads/

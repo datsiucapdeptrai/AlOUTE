@@ -23,15 +23,16 @@ public class ProfileController {
     private final ProfileService profileService;
 
     // =====================================================
-    // XEM PROFILE CỦA CHÍNH MÌNH
+    // 1. XEM PROFILE CỦA CHÍNH MÌNH (Điều hướng)
     // =====================================================
     @GetMapping("/profile")
     public String showOwnProfile(Authentication authentication) {
+        // Chuyển hướng sang URL có username để dùng chung logic hiển thị
         return "redirect:/profile/" + authentication.getName();
     }
 
     // =====================================================
-    // XEM PROFILE CỦA NGƯỜI KHÁC (hoặc chính mình)
+    // 2. XEM PROFILE CỦA NGƯỜI KHÁC (hoặc chính mình)
     // =====================================================
     @GetMapping("/profile/{username}")
     public String showProfile(
@@ -43,35 +44,36 @@ public class ProfileController {
         UserAccount profileUser = profileService.getUserProfile(username);
         Page<Post> posts = profileService.getUserPosts(username, page);
 
+        // Truyền dữ liệu ra View
         model.addAttribute("profileUser", profileUser);
         model.addAttribute("stats", profileService.getProfileStats(username));
         model.addAttribute("posts", posts);
-        model.addAttribute(
-            "isOwnProfile",
-            authentication != null
-                && authentication.getName().equalsIgnoreCase(username)
-        );
+        
+        // Kiểm tra xem người đang xem có phải là chủ tài khoản không (để ẩn/hiện nút Chỉnh sửa)
+        boolean isOwnProfile = authentication != null 
+                && authentication.getName().equalsIgnoreCase(username);
+        model.addAttribute("isOwnProfile", isOwnProfile);
 
         return "profile/view";
     }
 
     // =====================================================
-    // HIỂN THỊ FORM CHỈNH SỬA
+    // 3. HIỂN THỊ FORM CHỈNH SỬA
     // =====================================================
     @GetMapping("/profile/edit")
     public String showEditForm(Authentication authentication, Model model) {
-        ProfileUpdateRequest form =
-            profileService.getProfileForm(authentication.getName());
+        // Lấy form data (chứa các trường text) từ Service
+        ProfileUpdateRequest form = profileService.getProfileForm(authentication.getName());
         model.addAttribute("profileForm", form);
-        model.addAttribute(
-            "currentUser",
-            profileService.getUserProfile(authentication.getName())
-        );
+        
+        // Lấy thông tin user để hiển thị Avatar hiện tại
+        model.addAttribute("currentUser", profileService.getUserProfile(authentication.getName()));
+        
         return "profile/edit";
     }
 
     // =====================================================
-    // LƯU THAY ĐỔI
+    // 4. LƯU THAY ĐỔI
     // =====================================================
     @PostMapping("/profile/edit")
     public String updateProfile(
@@ -81,34 +83,30 @@ public class ProfileController {
             Model model,
             RedirectAttributes redirectAttributes) {
 
+        // 4.1. Kiểm tra lỗi Validation (ví dụ: Họ tên rỗng)
         if (bindingResult.hasErrors()) {
-            model.addAttribute(
-                "currentUser",
-                profileService.getUserProfile(authentication.getName())
-            );
+            model.addAttribute("currentUser", profileService.getUserProfile(authentication.getName()));
             return "profile/edit";
         }
 
         try {
+            // 4.2. Lưu các thông tin văn bản (Họ tên, Bio, SĐT, Ngày sinh, Địa điểm)
             profileService.updateProfile(authentication.getName(), profileForm);
 
-            // Nếu có upload avatar kèm theo
+            // 4.3. Xử lý Upload Avatar (nếu người dùng có chọn file)
             MultipartFile avatar = profileForm.getAvatar();
             if (avatar != null && !avatar.isEmpty()) {
                 profileService.updateAvatar(authentication.getName(), avatar);
             }
 
-            redirectAttributes.addFlashAttribute(
-                "successMessage", "Cập nhật hồ sơ thành công."
-            );
+            // 4.4. Thành công, chuyển hướng về trang chỉnh sửa kèm thông báo
+            redirectAttributes.addFlashAttribute("successMessage", "Cập nhật hồ sơ thành công.");
             return "redirect:/profile/edit";
 
         } catch (IllegalArgumentException | IllegalStateException exception) {
+            // 4.5. Bắt lỗi logic từ Service (ví dụ: lỗi upload ảnh)
             model.addAttribute("updateError", exception.getMessage());
-            model.addAttribute(
-                "currentUser",
-                profileService.getUserProfile(authentication.getName())
-            );
+            model.addAttribute("currentUser", profileService.getUserProfile(authentication.getName()));
             return "profile/edit";
         }
     }

@@ -4,112 +4,140 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Chỉnh sửa hồ sơ | FAKEBOOK</title>
+    <!-- Bootstrap CSS & Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
+        body { background-color: #f0f2f5; }
         .avatar-preview {
-            width: 120px; height: 120px;
+            width: 140px; height: 140px;
             border-radius: 50%; object-fit: cover;
-            border: 3px solid #dee2e6;
+            border: 4px solid #fff;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
+        .card-custom {
+            border: none; border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        }
+        .form-label { font-weight: 600; color: #4b4f56; font-size: 0.9rem; }
+        .form-control:focus { border-color: #1877f2; box-shadow: 0 0 0 0.25rem rgba(24,119,242,0.25); }
     </style>
 </head>
-<body class="bg-light">
-<nav class="navbar navbar-dark bg-primary">
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-dark bg-primary shadow-sm">
     <div class="container">
         <a class="navbar-brand fw-bold" th:href="@{/feed}">FAKEBOOK</a>
-        <a class="btn btn-light btn-sm" th:href="@{/feed}">Quay lại bảng tin</a>
+        <a class="btn btn-outline-light btn-sm" th:href="@{/feed}">
+            <i class="bi bi-arrow-left"></i> Về bảng tin
+        </a>
     </div>
 </nav>
 
 <main class="container py-5">
     <div class="row justify-content-center">
-        <div class="col-lg-7">
-            <div class="card shadow-sm">
-                <div class="card-body p-4">
-                    <h3 class="mb-4">Chỉnh sửa hồ sơ</h3>
+        <div class="col-lg-8 col-md-10">
+            
+            <div class="card card-custom">
+                <div class="card-body p-4 p-md-5">
+                    <h3 class="mb-4 text-center fw-bold text-secondary">Chỉnh sửa hồ sơ</h3>
 
-                    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
-                    <div th:if="${updateError}" class="alert alert-danger" th:text="${updateError}"></div>
-
-                    <!-- Avatar hiện tại + form upload -->
-                    <div class="text-center mb-4">
-                        <img th:if="${currentUser.profile != null and currentUser.profile.avatarUrl != null}"
-                             th:src="${currentUser.profile.avatarUrl}"
-                             class="avatar-preview mb-2" alt="Avatar">
-                        <div th:if="${currentUser.profile == null or currentUser.profile.avatarUrl == null}"
-                             class="avatar-preview bg-secondary text-white d-inline-flex align-items-center justify-content-center mb-2">
-                            <span style="font-size: 48px;"
-                                  th:text="${#strings.substring(currentUser.fullName, 0, 1)}">U</span>
-                        </div>
-                        <p class="text-secondary small mb-0">
-                            Ảnh đại diện hiện tại
-                        </p>
+                    <!-- Thông báo lỗi / thành công -->
+                    <div th:if="${successMessage}" class="alert alert-success d-flex align-items-center">
+                        <i class="bi bi-check-circle-fill me-2"></i>
+                        <span th:text="${successMessage}"></span>
+                    </div>
+                    <div th:if="${updateError}" class="alert alert-danger d-flex align-items-center">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <span th:text="${updateError}"></span>
                     </div>
 
-                    <!-- Form chính -->
+                    <!-- Form Upload -->
                     <form th:action="@{/profile/edit}"
                           th:object="${profileForm}"
                           method="post"
                           enctype="multipart/form-data">
 
-                        <div class="mb-3">
-                            <label class="form-label">Ảnh đại diện mới</label>
-                            <input type="file"
-                                   class="form-control"
-                                   th:field="*{avatar}"
-                                   accept="image/jpeg,image/png,image/gif">
-                            <small class="text-secondary">JPG, PNG hoặc GIF; tối đa 5MB.</small>
+                        <!-- Khu vực Avatar -->
+                        <div class="d-flex flex-column flex-md-row align-items-center mb-4 pb-4 border-bottom">
+                            <div class="position-relative mb-3 mb-md-0 me-md-4">
+                                <!-- Hiển thị avatar hiện tại -->
+                                <img th:if="${currentUser.profile != null and currentUser.profile.avatarUrl != null}"
+                                     th:src="${currentUser.profile.avatarUrl}"
+                                     class="avatar-preview" alt="Avatar">
+                                <div th:if="${currentUser.profile == null or currentUser.profile.avatarUrl == null}"
+                                     class="avatar-preview bg-secondary text-white d-flex align-items-center justify-content-center">
+                                    <span style="font-size: 56px;" th:text="${#strings.substring(currentUser.fullName, 0, 1)}">U</span>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1 w-100">
+                                <label class="form-label">Cập nhật ảnh đại diện mới</label>
+                                <input type="file" class="form-control" th:field="*{avatar}" accept="image/jpeg,image/png,image/gif">
+                                <small class="text-secondary mt-1 d-block">
+                                    <i class="bi bi-info-circle"></i> Chấp nhận JPG, PNG hoặc GIF; tối đa 5MB.
+                                </small>
+                            </div>
                         </div>
 
-                        <hr>
-
-                        <div class="mb-3">
-                            <label class="form-label">Họ và tên</label>
-                            <input type="text" class="form-control"
-                                   th:field="*{fullName}"
-                                   th:classappend="${#fields.hasErrors('fullName')} ? 'is-invalid' : ''">
-                            <div class="invalid-feedback" th:errors="*{fullName}"></div>
+                        <!-- Các trường thông tin -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-12">
+                                <label class="form-label">Họ và tên</label>
+                                <input type="text" class="form-control" th:field="*{fullName}"
+                                       th:classappend="${#fields.hasErrors('fullName')} ? 'is-invalid' : ''">
+                                <div class="invalid-feedback" th:errors="*{fullName}"></div>
+                            </div>
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label">Giới thiệu</label>
-                            <textarea class="form-control" rows="4"
-                                      th:field="*{bio}"
+                            <label class="form-label">Giới thiệu bản thân</label>
+                            <textarea class="form-control" rows="3" th:field="*{bio}"
+                                      placeholder="Viết vài dòng giới thiệu về bạn..."
                                       th:classappend="${#fields.hasErrors('bio')} ? 'is-invalid' : ''"></textarea>
                             <div class="invalid-feedback" th:errors="*{bio}"></div>
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Số điện thoại</label>
-                            <input type="text" class="form-control"
-                                   th:field="*{phone}"
-                                   th:classappend="${#fields.hasErrors('phone')} ? 'is-invalid' : ''">
-                            <div class="invalid-feedback" th:errors="*{phone}"></div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Số điện thoại</label>
+                                <input type="text" class="form-control" th:field="*{phone}"
+                                       th:classappend="${#fields.hasErrors('phone')} ? 'is-invalid' : ''">
+                                <div class="invalid-feedback" th:errors="*{phone}"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Ngày sinh</label>
+                                <input type="date" class="form-control" th:field="*{dateOfBirth}"
+                                       th:classappend="${#fields.hasErrors('dateOfBirth')} ? 'is-invalid' : ''">
+                                <div class="invalid-feedback" th:errors="*{dateOfBirth}"></div>
+                            </div>
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Ngày sinh</label>
-                            <input type="date" class="form-control"
-                                   th:field="*{dateOfBirth}"
-                                   th:classappend="${#fields.hasErrors('dateOfBirth')} ? 'is-invalid' : ''">
-                            <div class="invalid-feedback" th:errors="*{dateOfBirth}"></div>
+                        <div class="mb-4">
+                            <label class="form-label">Địa điểm (Nơi sống)</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bi bi-geo-alt"></i></span>
+                                <input type="text" class="form-control" th:field="*{location}" placeholder="Ví dụ: TP. Hồ Chí Minh"
+                                       th:classappend="${#fields.hasErrors('location')} ? 'is-invalid' : ''">
+                            </div>
+                            <div class="text-danger small mt-1" th:if="${#fields.hasErrors('location')}" th:errors="*{location}"></div>
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Địa điểm</label>
-                            <input type="text" class="form-control"
-                                   th:field="*{location}"
-                                   th:classappend="${#fields.hasErrors('location')} ? 'is-invalid' : ''">
-                            <div class="invalid-feedback" th:errors="*{location}"></div>
+                        <!-- Nút bấm -->
+                        <div class="d-flex gap-2 justify-content-end pt-3 border-top">
+                            <a th:href="@{/profile}" class="btn btn-light border px-4 fw-semibold">Hủy bỏ</a>
+                            <button type="submit" class="btn btn-primary px-4 fw-bold">
+                                <i class="bi bi-save me-1"></i> Lưu thay đổi
+                            </button>
                         </div>
-
-                        <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
-                        <a th:href="@{/profile}" class="btn btn-secondary">Hủy</a>
+                        
                     </form>
                 </div>
             </div>
         </div>
     </div>
 </main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

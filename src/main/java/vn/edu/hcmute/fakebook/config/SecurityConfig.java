@@ -2,7 +2,6 @@ package vn.edu.hcmute.fakebook.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -34,10 +33,12 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
-                    "/", "/login", "/register", "/verify-otp", "/resend-otp",
+                    "/", "/login", "/register", 
+                    "/verify", "/verify/resend", 
+                    "/verify-otp", "/resend-otp", 
                     "/forgot-password", "/reset-password",
                     "/css/**", "/js/**", "/images/**", "/uploads/**", "/error",
-                    "/ws/**"   // ✅ Cho phép WebSocket handshake + SockJS fallback
+                    "/ws/**"
                 ).permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/manager/**").hasAnyRole("MANAGER", "ADMIN")

@@ -3,263 +3,183 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Bảng tin | FAKEBOOK</title>
+    <title>Bảng tin | ALOUTE</title>
     <meta th:if="${_csrf != null}" name="_csrf" th:content="${_csrf.token}">
     <meta th:if="${_csrf != null}" name="_csrf_header" th:content="${_csrf.headerName}">
+    
+    <!-- Bootstrap CSS & Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <!-- CSS Dark Mode -->
+    <link rel="stylesheet" th:href="@{/css/theme-dark.css}">
+
     <style>
-		    .min-width-0 {
-		    min-width: 0;
-		}
-		
-		.suggestion-item:last-child {
-		    border-bottom: 0 !important;
-		    margin-bottom: 0 !important;
-		    padding-bottom: 0 !important;
-		}
+        .min-width-0 { min-width: 0; }
+        .suggestion-item:last-child { border-bottom: 0 !important; margin-bottom: 0 !important; padding-bottom: 0 !important; }
         .post-content { white-space: pre-wrap; overflow-wrap: anywhere; }
         .avatar-circle { width: 90px; height: 90px; font-size: 36px; }
-        .comment-box { background-color: #f0f2f5; }
+        
+        /* CSS cho comment chuẩn Facebook */
+        .comment-bubble { background-color: #f0f2f5; border-radius: 18px; display: inline-block; max-width: 90%; padding: 8px 12px; }
+        .comment-action { cursor: pointer; font-weight: 600; }
+        .comment-action:hover { text-decoration: underline; color: #0d6efd !important; }
+        .comment-input-rounded { border-radius: 20px; background-color: #f0f2f5; border: 1px solid #ced4da; }
+        .comment-input-rounded:focus { background-color: #fff; }
+
         .post-video { width: 100%; max-height: 520px; background: #000; }
         .video-meta { font-size: .9rem; }
 
-        .navbar-avatar {
-            width: 36px; height: 36px;
-            border-radius: 50%; object-fit: cover;
-            border: 2px solid white;
+        .navbar-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid white; }
+        .navbar-avatar-fallback { width: 36px; height: 36px; border-radius: 50%; background: white; color: #0d6efd; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 16px; }
+
+        /* ================= CSS CHO CHAT SIDEBAR ================= */
+        .chat-sidebar { 
+            position: fixed; 
+            top: 64px; 
+            right: 0; 
+            bottom: 0; 
+            width: 320px; 
+            z-index: 1060;
+            display: flex; 
+            flex-direction: column; 
+            border-left: 1px solid #3a3b3c; 
+            box-shadow: -4px 0 18px rgba(0,0,0,0.2); 
+            background: #242526; 
+            color: #e4e6eb;
+            
+            /* Hiệu ứng trượt ẩn sang phải */
+            transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .navbar-avatar-fallback {
-            width: 36px; height: 36px;
-            border-radius: 50%;
-            background: white; color: #0d6efd;
-            display: flex; align-items: center; justify-content: center;
-            font-weight: bold; font-size: 16px;
+        
+        .chat-sidebar.is-open {
+            transform: translateX(0);
         }
 
-        .chat-sidebar, .chat-window { background: #242526; color: #e4e6eb; }
-        .chat-sidebar {
-            position: fixed; top: 64px; right: 0; bottom: 0; width: 300px;
-            z-index: 1055; display: flex; flex-direction: column;
-            border-left: 1px solid #3a3b3c; box-shadow: -4px 0 18px #0002;
-        }
         .chat-sidebar-header { padding: 16px 16px 8px; }
-        .chat-search {
-            background: #3a3b3c; color: #e4e6eb; border: 0;
-            border-radius: 24px; padding: 9px 14px; width: 100%; outline: none;
-        }
+        .chat-search { background: #3a3b3c; color: #e4e6eb; border: 0; border-radius: 24px; padding: 9px 14px; width: 100%; outline: none; }
         .chat-search::placeholder { color: #b0b3b8; }
         .chat-filters { display: flex; gap: 8px; padding: 12px 16px; }
-        .chat-filter {
-            background: transparent; color: #e4e6eb; border: 0;
-            border-radius: 20px; padding: 6px 14px;
-        }
+        .chat-filter { background: transparent; color: #e4e6eb; border: 0; border-radius: 20px; padding: 6px 14px; }
         .chat-filter.active { background: #263951; color: #8abaff; }
         .chat-contacts { overflow-y: auto; flex: 1; padding: 0 8px; }
-        .chat-contact {
-            display: flex; align-items: center; gap: 10px; width: 100%;
-            padding: 10px; color: inherit; background: transparent;
-            text-align: left; border: 0; border-radius: 10px;
-        }
+        .chat-contact { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px; color: inherit; background: transparent; text-align: left; border: 0; border-radius: 10px; }
         .chat-contact:hover, .chat-contact:focus-visible { background: #3a3b3c; }
-        .chat-avatar {
-            width: 42px; height: 42px; flex: 0 0 42px;
-            border-radius: 50%; background: #5478a9;
-            color: white; display: inline-flex;
-            align-items: center; justify-content: center; font-weight: bold;
-        }
+        .chat-avatar { width: 42px; height: 42px; flex: 0 0 42px; border-radius: 50%; background: #5478a9; color: white; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; }
         .chat-contact-details { min-width: 0; flex: 1; }
-        .chat-preview {
-            display: block; color: #b0b3b8; font-size: 13px;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        }
+        .chat-preview { display: block; color: #b0b3b8; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .chat-unread { background: #0d6efd; color: white; border-radius: 12px; padding: 1px 7px; }
         .chat-sidebar-footer { padding: 12px; border-top: 1px solid #3a3b3c; text-align: center; }
         .chat-sidebar-footer a { color: #8abaff; text-decoration: none; }
-        .chat-window {
-            position: fixed; right: 316px; bottom: 12px;
-            width: min(360px, calc(100vw - 24px));
-            height: min(520px, calc(100vh - 90px));
-            z-index: 1060; display: flex; flex-direction: column;
-            border: 1px solid #3a3b3c; border-radius: 12px;
-            box-shadow: 0 8px 32px #0006; overflow: hidden;
-        }
-        .chat-window-header {
-            display: flex; align-items: center; gap: 10px;
-            padding: 10px 12px; border-bottom: 1px solid #3a3b3c;
-        }
+        
+        .chat-window { background: #242526; color: #e4e6eb; position: fixed; right: 340px; bottom: 12px; width: min(360px, calc(100vw - 24px)); height: min(520px, calc(100vh - 90px)); z-index: 1065; display: flex; flex-direction: column; border: 1px solid #3a3b3c; border-radius: 12px; box-shadow: 0 8px 32px #0006; overflow: hidden; }
+        .chat-window-header { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid #3a3b3c; }
         .chat-window-header .chat-avatar { width: 34px; height: 34px; flex-basis: 34px; }
-        .chat-icon-button {
-            color: #b0b3b8; background: transparent; border: 0;
-            border-radius: 50%; width: 32px; height: 32px;
-        }
+        .chat-icon-button { color: #b0b3b8; background: transparent; border: 0; border-radius: 50%; width: 32px; height: 32px; }
         .chat-icon-button:hover { background: #3a3b3c; color: white; }
         .chat-scroll { overflow-y: auto; flex: 1; min-height: 0; padding: 12px; }
         .chat-message { display: flex; margin: 8px 0; }
         .chat-message.own { justify-content: flex-end; }
-        .chat-bubble {
-            max-width: 84%; background: #3a3b3c; padding: 8px 12px;
-            border-radius: 16px; overflow-wrap: anywhere; white-space: pre-wrap;
-        }
+        .chat-bubble { max-width: 84%; background: #3a3b3c; padding: 8px 12px; border-radius: 16px; overflow-wrap: anywhere; white-space: pre-wrap; }
         .chat-message.own .chat-bubble { background: #0d6efd; color: white; }
         .chat-message-meta { display: block; color: #c7c9ce; font-size: 11px; margin-top: 4px; }
         .chat-composer { display: flex; gap: 8px; padding: 10px; border-top: 1px solid #3a3b3c; }
         .chat-composer input { background: #3a3b3c; color: white; border: 0; border-radius: 20px; }
         .chat-composer input::placeholder { color: #b0b3b8; }
         .chat-composer input:focus { background: #3a3b3c; color: white; }
-        .chat-launcher { display: none; position: fixed; right: 16px; bottom: 16px; z-index: 1050; }
-        .chat-backdrop { position: fixed; inset: 0; background: #0008; z-index: 1052; }
-        @media (min-width: 1200px) {
-            main.container.py-4 {
-                max-width: none; width: calc(100% - 300px);
-                margin-left: 0; margin-right: 300px; padding: 24px;
-            }
-            #chatSidebarClose { display: none; }
-        }
+        
+        .chat-launcher { display: none !important; }
+        
         @media (max-width: 1199.98px) {
-            .chat-sidebar {
-                top: 0; width: min(340px, 92vw);
-                transform: translateX(102%); transition: transform .2s ease;
-            }
-            .chat-sidebar.is-open { transform: translateX(0); }
-            .chat-launcher { display: inline-flex; }
+            .chat-sidebar { top: 64px; width: min(340px, 92vw); }
             .chat-window { right: 12px; }
         }
 
-        /* Search bar */
-        .search-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 14px;
-        }
-        .search-card .form-control,
-        .search-card .form-select {
-            border: 0; border-radius: 10px;
-        }
-        .search-card .form-label {
-            color: white; font-weight: 600;
-        }
+        /* CSS CHO THANH TÌM KIẾM */
+        .search-bar-container { background: white; border-radius: 50px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 6px 16px; margin-bottom: 1rem; }
+        .search-input-group { background: #f0f2f5; border-radius: 50px; padding: 4px 12px; flex-grow: 1; display: flex; align-items: center; }
+        .search-input-group input { background: transparent; border: none; box-shadow: none; font-size: 0.95rem; }
+        .search-input-group input:focus { background: transparent; box-shadow: none; }
+        .search-select { border: none; background: transparent; font-weight: 600; color: #65676b; cursor: pointer; width: auto; font-size: 0.9rem; }
+        .search-select:focus { box-shadow: none; }
 
         /* ================= REACTION PICKER ================= */
-        .reaction-wrapper { position: relative; display: inline-block; }
-
+        .reaction-wrapper { position: relative; width: 100%; }
         .reaction-picker {
-            position: absolute;
-            bottom: 100%;
-            left: 0;
-            margin-bottom: 8px;
-            background: white;
-            border-radius: 30px;
-            padding: 6px 10px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-            display: none;
-            gap: 4px;
-            z-index: 100;
+            position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); margin-bottom: 8px;
+            background: white; border-radius: 30px; padding: 6px 10px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2); display: none; gap: 4px; z-index: 100;
         }
-        /* Cầu nối hover - giữ chuột không bị mất hover khi di chuyển qua khoảng trống */
-		.reaction-picker::after {
-		    content: "";
-		    position: absolute;
-		    top: 100%;
-		    left: 0;
-		    right: 0;
-		    height: 12px;   /* Cao hơn margin-bottom 8px để chắc chắn phủ hết */
-		    background: transparent;
-		}
-		        .reaction-wrapper:hover .reaction-picker { display: flex; }
-
-        .reaction-btn {
-            font-size: 26px;
-            background: none;
-            border: 0;
-            cursor: pointer;
-            transition: transform 0.15s;
-            padding: 2px;
-        }
+        .reaction-picker::after { content: ""; position: absolute; top: 100%; left: 0; right: 0; height: 12px; background: transparent; }
+        .reaction-wrapper:hover .reaction-picker { display: flex; }
+        .reaction-btn { font-size: 26px; background: none; border: 0; cursor: pointer; transition: transform 0.15s; padding: 2px; }
         .reaction-btn:hover { transform: scale(1.4); }
-
-        .reaction-stats {
-            font-size: 13px;
-            color: #65676b;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .reaction-stats .emoji-stack {
-            display: inline-flex;
-        }
+        
+        .reaction-stats { font-size: 13px; color: #65676b; display: flex; align-items: center; gap: 6px; }
+        .reaction-stats .emoji-stack { display: inline-flex; }
         .reaction-stats .emoji-stack span {
-            display: inline-flex;
-            width: 20px; height: 20px;
-            border-radius: 50%;
-            background: white;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            margin-right: -6px;
-            border: 1px solid #e4e6eb;
+            display: inline-flex; width: 20px; height: 20px; border-radius: 50%; background: white;
+            align-items: center; justify-content: center; font-size: 12px; margin-right: -6px; border: 1px solid #e4e6eb;
         }
+
+        /* CSS NÚT TƯƠNG TÁC CHUẨN FACEBOOK */
+        .action-btn { 
+            border-radius: 4px; transition: background 0.2s; 
+            font-weight: 600; font-size: 0.95rem; 
+            color: #65676b; border: none; background: transparent;
+        }
+        .action-btn:hover { background-color: #f0f2f5; color: #65676b; }
+        
+        .create-post-bar { transition: background 0.2s; }
+        .create-post-bar:hover { background: #f0f2f5 !important; }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
 </head>
 <body class="bg-light">
 
 <!-- ===================== NAVBAR ===================== -->
-<nav class="navbar navbar-dark bg-primary shadow-sm">
-    <div class="container">
-        <a class="navbar-brand fw-bold" th:href="@{/feed}">FAKEBOOK</a>
+<nav class="navbar navbar-dark bg-primary shadow-sm sticky-top">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand fw-bold fs-4" th:href="@{/feed}">ALOUTE</a>
         <div class="d-flex align-items-center gap-2 flex-wrap">
-            <a th:href="@{/friends}" class="btn btn-outline-light btn-sm">Bạn bè</a>
-            <a th:href="@{/videos}" class="btn btn-outline-light btn-sm">Video</a>
-
-            <a th:if="${#authorization.expression('hasRole(''MANAGER'')')}"
-               th:href="@{/manager}"
-               class="btn btn-warning btn-sm fw-semibold">
-                🛡️ Quản lý nội dung
+            
+            <a th:href="@{/friends}" class="btn btn-outline-light btn-sm"><i class="bi bi-people-fill"></i> Bạn bè</a> 
+            <a th:href="@{/videos}" class="btn btn-outline-light btn-sm"><i class="bi bi-play-btn-fill"></i> Video</a> 
+            
+            <a th:if="${#authorization.expression('hasRole(''MANAGER'')')}" th:href="@{/manager}" class="btn btn-warning btn-sm fw-semibold"> <i class="bi bi-shield-check"></i> Quản lý nội dung</a> 
+            <a th:if="${#authorization.expression('hasRole(''ADMIN'')')}" th:href="@{/admin}" class="btn btn-danger btn-sm fw-semibold"> <i class="bi bi-gear-fill"></i> Quản trị</a> 
+            
+            <!-- NÚT BẬT/TẮT CHAT -->
+            <button id="chatNavbarButton" type="button" class="btn btn-outline-light btn-sm position-relative"> 
+                <i class="bi bi-chat-dots-fill"></i> Đoạn chat
+                <span id="messageBadge" th:attr="data-count-url=@{/messages/unread/count}" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none">0</span>
+            </button> 
+            
+            <!-- NÚT LINK TỚI TRANG TIN NHẮN -->
+            <a th:href="@{/messages}" class="btn btn-outline-light btn-sm" title="Hộp thư">
+                <i class="bi bi-envelope-fill"></i>
             </a>
 
-            <a th:if="${#authorization.expression('hasRole(''ADMIN'')')}"
-               th:href="@{/admin}"
-               class="btn btn-danger btn-sm fw-semibold">
-                ⚙️ Quản trị
-            </a>
+            <a th:href="@{/notifications}" class="btn btn-outline-light btn-sm position-relative"> <i class="bi bi-bell-fill"></i> Thông báo <span id="notificationBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" th:classappend="${unreadNotificationCount == 0} ? 'd-none' : ''" th:text="${unreadNotificationCount}">0</span></a>
+            
+            <!-- NÚT DARK MODE -->
+            <button id="themeToggle" class="btn btn-outline-light btn-sm" title="Đổi giao diện Sáng/Tối">
+                <i class="bi bi-moon-fill"></i>
+            </button>
 
-            <a id="chatNavbarButton" th:href="@{/messages}"
-               class="btn btn-outline-light btn-sm position-relative">
-                Tin nhắn
-                <span id="messageBadge"
-                      th:attr="data-count-url=@{/messages/unread/count}"
-                      class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none">0</span>
-            </a>
+            <!-- AVATAR USER -->
+            <a th:href="@{'/profile/' + ${currentUser.username}}" class="d-flex align-items-center text-decoration-none gap-2 ms-2" title="Xem trang cá nhân"> 
+                <img th:if="${currentUser.profile != null and currentUser.profile.avatarUrl != null}" th:src="${currentUser.profile.avatarUrl}" class="navbar-avatar border border-2 border-white" alt="Avatar">
+                <div th:if="${currentUser.profile == null or currentUser.profile.avatarUrl == null}" class="navbar-avatar-fallback" th:text="${#strings.substring(currentUser.fullName, 0, 1)}">U</div>
+                <span class="text-white d-none d-lg-inline fw-semibold" th:text="${currentUser.fullName}">Người dùng</span>
+            </a> 
+            
+            <a th:href="@{/profile/edit}" class="btn btn-outline-light btn-sm" title="Chỉnh sửa hồ sơ"> <i class="bi bi-gear-fill"></i></a> 
+            <a th:href="@{/account/settings}" class="btn btn-outline-light btn-sm" title="Cài đặt tài khoản"><i class="bi bi-shield-lock-fill"></i></a>
 
-            <a th:href="@{/notifications}"
-               class="btn btn-outline-light btn-sm position-relative">
-                Thông báo
-                <span id="notificationBadge"
-                      class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                      th:classappend="${unreadNotificationCount == 0} ? 'd-none' : ''"
-                      th:text="${unreadNotificationCount}">0</span>
-            </a>
-
-            <a th:href="@{'/profile/' + ${currentUser.username}}"
-               class="d-flex align-items-center text-decoration-none gap-2"
-               title="Xem trang cá nhân">
-                <img th:if="${currentUser.profile != null and currentUser.profile.avatarUrl != null}"
-                     th:src="${currentUser.profile.avatarUrl}"
-                     class="navbar-avatar" alt="Avatar">
-                <div th:if="${currentUser.profile == null or currentUser.profile.avatarUrl == null}"
-                     class="navbar-avatar-fallback"
-                     th:text="${#strings.substring(currentUser.fullName, 0, 1)}">U</div>
-                <span class="text-white d-none d-lg-inline fw-semibold"
-                      th:text="${currentUser.fullName}">Người dùng</span>
-            </a>
-
-            <a th:href="@{/profile/edit}"
-               class="btn btn-outline-light btn-sm"
-               title="Chỉnh sửa hồ sơ">
-                ⚙️
-            </a>
-
-            <form th:action="@{/logout}" method="post" class="mb-0">
-                <button type="submit" class="btn btn-light btn-sm">Đăng xuất</button>
+            <form th:action="@{/logout}" method="post" class="mb-0 ms-2">
+                <button type="submit" class="btn btn-light btn-sm fw-bold text-primary">Đăng xuất</button>
             </form>
         </div>
     </div>
@@ -271,393 +191,359 @@
     <div th:if="${param.deleted}" class="alert alert-success">Xóa bài viết thành công.</div>
     <div th:if="${postError}" class="alert alert-danger" th:text="${postError}"></div>
     <div th:if="${commentMessage}" class="alert alert-success" th:text="${commentMessage}"></div>
-    <div th:if="${commentError != null and commentPostId == null}"
-         class="alert alert-danger" th:text="${commentError}"></div>
+    <div th:if="${commentError != null and commentPostId == null}" class="alert alert-danger" th:text="${commentError}"></div>
 
     <div class="row">
-        <!-- ========== CỘT TRÁI: THÔNG TIN USER ========== -->
+        <!-- ========== CỘT TRÁI ========== -->
         <aside class="col-lg-3 mb-3">
-            <div class="card shadow-sm">
+            <div class="card shadow-sm border-0 rounded-4">
                 <div class="card-body text-center">
-                    <img th:if="${currentUser.profile != null and currentUser.profile.avatarUrl != null}"
-                         th:src="${currentUser.profile.avatarUrl}"
-                         class="rounded-circle mb-3"
-                         style="width: 90px; height: 90px; object-fit: cover;"
-                         alt="Avatar">
-                    <div th:if="${currentUser.profile == null or currentUser.profile.avatarUrl == null}"
-                         class="avatar-circle rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center mx-auto mb-3">
+                    <img th:if="${currentUser.profile != null and currentUser.profile.avatarUrl != null}" th:src="${currentUser.profile.avatarUrl}" class="rounded-circle mb-3" style="width: 90px; height: 90px; object-fit: cover;" alt="Avatar">
+                    <div th:if="${currentUser.profile == null or currentUser.profile.avatarUrl == null}" class="avatar-circle rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center mx-auto mb-3">
                         <span th:text="${#strings.substring(currentUser.fullName, 0, 1)}">U</span>
                     </div>
-
                     <h5 th:text="${currentUser.fullName}">Họ tên</h5>
                     <p class="text-secondary" th:text="'@' + ${currentUser.username}">@username</p>
-
-                    <a th:href="@{'/profile/' + ${currentUser.username}}"
-                       class="btn btn-primary btn-sm w-100 mb-2">
-                        👤 Xem trang cá nhân
-                    </a>
-                    <a th:href="@{/profile/edit}"
-                       class="btn btn-outline-primary btn-sm w-100">
-                        ⚙️ Chỉnh sửa hồ sơ
-                    </a>
+                    <a th:href="@{'/profile/' + ${currentUser.username}}" class="btn btn-primary btn-sm w-100 mb-2 rounded-pill fw-semibold">👤 Xem trang cá nhân</a>
+                    <a th:href="@{/profile/edit}" class="btn btn-outline-primary btn-sm w-100 rounded-pill fw-semibold">⚙️ Chỉnh sửa hồ sơ</a>
                 </div>
             </div>
         </aside>
 
-        <!-- ========== CỘT GIỮA: FEED ========== -->
+        <!-- ========== CỘT GIỮA ========== -->
         <section class="col-lg-6 mb-3">
 
             <!-- THANH TÌM KIẾM -->
-            <div class="search-card shadow-sm mb-3 p-3">
-                <form th:action="@{/feed}" method="get" id="searchForm">
-                    <div class="row g-2 align-items-end">
-                        <div class="col-12 col-md-5">
-                            <label class="form-label small mb-1">🔍 Tìm kiếm</label>
-                            <input type="text" name="keyword" id="searchKeyword"
-                                   class="form-control form-control-sm"
-                                   placeholder="Nội dung, tên tác giả..."
-                                   th:value="${keyword}">
-                        </div>
-
-                        <div class="col-6 col-md-3">
-                            <label class="form-label small mb-1">Loại</label>
-                            <select name="type" class="form-select form-select-sm"
-                                    onchange="this.form.submit()">
-                                <option value="ALL"   th:selected="${type == 'ALL'}">Tất cả</option>
-                                <option value="TEXT"  th:selected="${type == 'TEXT'}">Văn bản</option>
-                                <option value="IMAGE" th:selected="${type == 'IMAGE'}">Có ảnh</option>
-                                <option value="VIDEO" th:selected="${type == 'VIDEO'}">Có video</option>
-                            </select>
-                        </div>
-
-                        <div class="col-6 col-md-3">
-                            <label class="form-label small mb-1">Sắp xếp</label>
-                            <select name="sort" class="form-select form-select-sm"
-                                    onchange="this.form.submit()">
-                                <option value="newest"  th:selected="${sort == 'newest'}">Mới nhất</option>
-                                <option value="popular" th:selected="${sort == 'popular'}">Nhiều lượt xem</option>
-                            </select>
-                        </div>
-
-                        <div class="col-12 col-md-1 d-grid">
-                            <button type="submit" class="btn btn-light btn-sm">Tìm</button>
-                        </div>
+            <div class="search-bar-container d-flex align-items-center gap-2">
+                <form th:action="@{/feed}" method="get" id="searchForm" class="d-flex align-items-center w-100 m-0">
+                    <div class="search-input-group me-2">
+                        <i class="bi bi-search text-secondary me-2"></i>
+                        <input type="text" name="keyword" id="searchKeyword" class="form-control" 
+                               placeholder="Tìm kiếm bài viết, tác giả..." th:value="${keyword}">
                     </div>
+                    <select name="type" class="form-select search-select d-none d-md-block me-2" onchange="this.form.submit()">
+                        <option value="ALL" th:selected="${type == 'ALL'}">Tất cả</option>
+                        <option value="TEXT" th:selected="${type == 'TEXT'}">Văn bản</option>
+                        <option value="IMAGE" th:selected="${type == 'IMAGE'}">Ảnh</option>
+                        <option value="VIDEO" th:selected="${type == 'VIDEO'}">Video</option>
+                    </select>
+                    <select name="sort" class="form-select search-select d-none d-md-block" onchange="this.form.submit()">
+                        <option value="newest" th:selected="${sort == 'newest'}">Mới nhất</option>
+                        <option value="popular" th:selected="${sort == 'popular'}">Nổi bật</option>
+                    </select>
                 </form>
             </div>
 
-            <!-- FORM ĐĂNG BÀI -->
-            <div class="card shadow-sm mb-3">
-                <div class="card-body">
-                    <form th:action="@{/posts}" th:object="${postForm}" method="post" enctype="multipart/form-data">
-                        <textarea class="form-control mb-3" rows="4" maxlength="5000"
-                                  th:field="*{content}" placeholder="Bạn đang nghĩ gì?"></textarea>
-                        <div class="mb-3">
-                            <label for="image" class="form-label">Ảnh bài viết</label>
-                            <input id="image" type="file" th:field="*{image}" class="form-control"
-                                   accept="image/jpeg,image/png,image/gif">
-                            <small class="text-secondary">Chấp nhận JPG, PNG hoặc GIF; tối đa 5 MB.</small>
-                        </div>
-                        <details class="mb-3 border rounded p-3">
-                            <summary class="fw-semibold text-primary">Thêm video</summary>
-                            <div class="mt-3">
-                                <label for="video" class="form-label">File video</label>
-                                <input id="video" type="file" th:field="*{video}" class="form-control"
-                                       accept="video/mp4,video/webm,video/ogg,video/quicktime">
-                                <small class="text-secondary">MP4, WebM, OGV hoặc MOV; tối đa 100 MB.</small>
-                            </div>
-                            <div class="mt-3">
-                                <label for="title" class="form-label">Tiêu đề video</label>
-                                <input id="title" type="text" maxlength="200" th:field="*{title}"
-                                       class="form-control" placeholder="Nhập tiêu đề video">
-                            </div>
-                            <div class="mt-3">
-                                <label for="videoCategoryId" class="form-label">Thể loại</label>
-                                <select id="videoCategoryId" th:field="*{videoCategoryId}" class="form-select">
-                                    <option value="">-- Chọn thể loại --</option>
-                                    <option th:each="category : ${videoCategories}"
-                                            th:value="${category.id}" th:text="${category.name}">Thể loại</option>
-                                </select>
-                            </div>
-                            <div class="mt-3">
-                                <label for="videoPoster" class="form-label">Ảnh poster (không bắt buộc)</label>
-                                <input id="videoPoster" type="file" th:field="*{videoPoster}"
-                                       class="form-control" accept="image/jpeg,image/png,image/gif">
-                            </div>
-                        </details>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div class="d-flex align-items-center gap-2">
-                                <label for="visibility" class="text-secondary">Quyền xem:</label>
-                                <select id="visibility" th:field="*{visibility}"
-                                        class="form-select form-select-sm" style="width: auto;">
-                                    <option value="PUBLIC">Công khai</option>
-                                    <option value="FRIENDS">Bạn bè</option>
-                                    <option value="PRIVATE">Chỉ mình tôi</option>
-                                </select>
-                            </div>
-                            <button type="submit" class="btn btn-primary">Đăng bài</button>
-                        </div>
-                    </form>
+            <!-- THANH ĐĂNG BÀI NHỎ GỌN -->
+            <div class="card shadow-sm mb-3 rounded-4 border-0">
+                <div class="card-body p-3">
+                    <div class="d-flex align-items-center mb-3">
+                        <img th:if="${currentUser.profile != null and currentUser.profile.avatarUrl != null}" th:src="${currentUser.profile.avatarUrl}" class="rounded-circle me-2" width="40" height="40" style="object-fit:cover;">
+                        <div th:if="${currentUser.profile == null or currentUser.profile.avatarUrl == null}" class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center me-2" style="width: 40px; height: 40px; font-weight: bold;" th:text="${#strings.substring(currentUser.fullName, 0, 1)}"></div>
+                        
+                        <button type="button" class="btn btn-light text-start flex-grow-1 rounded-pill text-secondary bg-light create-post-bar" style="font-size: 1.1rem;" data-bs-toggle="modal" data-bs-target="#createPostModal">
+                            <span th:text="${currentUser.fullName} + ' ơi, bạn đang nghĩ gì thế?'"></span>
+                        </button>
+                    </div>
+                    <hr class="my-1 text-muted">
+                    <div class="d-flex justify-content-around pt-2">
+                        <button type="button" class="btn btn-outline-success border-0 fw-semibold" data-bs-toggle="modal" data-bs-target="#createPostModal">
+                            <i class="bi bi-images text-success fs-5 me-1"></i> Ảnh/Video
+                        </button>
+                        <button type="button" class="btn btn-outline-warning border-0 fw-semibold" data-bs-toggle="modal" data-bs-target="#createPostModal">
+                            <i class="bi bi-emoji-smile text-warning fs-5 me-1"></i> Cảm xúc
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <!-- THÔNG BÁO CHƯA CÓ BÀI VIẾT -->
-            <div th:if="${posts.empty}" class="card shadow-sm">
-                <div class="card-body text-center py-5">
-                    <h5>Chưa có bài viết</h5>
-                    <p class="text-secondary mb-0">Hãy trở thành người đầu tiên đăng bài.</p>
-                </div>
-            </div>
-
-            <!-- DANH SÁCH BÀI VIẾT -->
-            <article th:each="post : ${posts.content}" th:id="|post-${post.id}|"
-                     class="card shadow-sm mb-3">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start">
+            <!-- BÀI VIẾT -->
+            <article th:each="post : ${posts.content}" th:id="|post-${post.id}|" class="card shadow-sm mb-3 rounded-4 border-0">
+                <div class="card-body pb-0">
+                    <!-- Header -->
+                    <div class="d-flex justify-content-between align-items-start mb-2">
                         <div class="d-flex align-items-center gap-2">
-                            <a th:href="@{'/profile/' + ${post.author.username}}"
-                               class="text-decoration-none">
-                                <img th:if="${post.author.profile != null and post.author.profile.avatarUrl != null}"
-                                     th:src="${post.author.profile.avatarUrl}"
-                                     class="rounded-circle"
-                                     style="width: 42px; height: 42px; object-fit: cover;"
-                                     alt="Avatar">
-                                <div th:if="${post.author.profile == null or post.author.profile.avatarUrl == null}"
-                                     class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center"
-                                     style="width: 42px; height: 42px; font-weight: bold;"
-                                     th:text="${#strings.substring(post.author.fullName, 0, 1)}">U</div>
+                            <a th:href="@{'/profile/' + ${post.author.username}}" class="text-decoration-none">
+                                <img th:if="${post.author.profile != null and post.author.profile.avatarUrl != null}" th:src="${post.author.profile.avatarUrl}" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;" alt="Avatar">
+                                <div th:if="${post.author.profile == null or post.author.profile.avatarUrl == null}" class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; font-weight: bold;" th:text="${#strings.substring(post.author.fullName, 0, 1)}">U</div>
                             </a>
                             <div>
-                                <a th:href="@{'/profile/' + ${post.author.username}}"
-                                   class="text-decoration-none text-dark">
-                                    <h6 class="mb-0" th:text="${post.author.fullName}">Tác giả</h6>
+                                <a th:href="@{'/profile/' + ${post.author.username}}" class="text-decoration-none text-dark">
+                                    <h6 class="mb-0 fw-bold" th:text="${post.author.fullName}">Tác giả</h6>
                                 </a>
                                 <small class="text-secondary">
-                                    <a th:href="@{'/profile/' + ${post.author.username}}"
-                                       class="text-decoration-none text-secondary"
-                                       th:text="'@' + ${post.author.username}">@username</a>
-                                    <span> · </span>
                                     <span th:text="${post.createdAt}">Thời gian</span>
                                     <span> · </span>
-                                    <span th:if="${post.visibility.name() == 'PUBLIC'}"
-                                          class="badge text-bg-success">Công khai</span>
-                                    <span th:if="${post.visibility.name() == 'FRIENDS'}"
-                                          class="badge text-bg-primary">Bạn bè</span>
-                                    <span th:if="${post.visibility.name() == 'PRIVATE'}"
-                                          class="badge text-bg-secondary">Chỉ mình tôi</span>
+                                    <i class="bi bi-globe-americas" th:if="${post.visibility.name() == 'PUBLIC'}"></i>
+                                    <i class="bi bi-people-fill" th:if="${post.visibility.name() == 'FRIENDS'}"></i>
+                                    <i class="bi bi-lock-fill" th:if="${post.visibility.name() == 'PRIVATE'}"></i>
                                 </small>
                             </div>
                         </div>
-                        <form th:if="${currentUser.id == post.author.id}"
-                              th:action="@{/posts/{id}/delete(id=${post.id})}" method="post"
-                              onsubmit="return confirm('Bạn có chắc muốn xóa bài viết này?')">
-                            <button type="submit" class="btn btn-outline-danger btn-sm">Xóa</button>
+                        <form th:if="${currentUser.id == post.author.id}" th:action="@{/posts/{id}/delete(id=${post.id})}" method="post" onsubmit="return confirm('Bạn có chắc muốn xóa bài viết này?')">
+                            <button type="submit" class="btn btn-outline-danger btn-sm border-0"><i class="bi bi-trash"></i></button>
                         </form>
                     </div>
 
-                    <hr>
-                    <p class="post-content mb-0" th:text="${post.content}">Nội dung bài viết</p>
-                    <img th:if="${post.imageUrl != null and !post.imageUrl.isBlank()}"
-                         th:src="${post.imageUrl}" class="img-fluid rounded mt-3" alt="Ảnh bài viết">
-                    <div th:if="${post.videoUrl != null and !post.videoUrl.isBlank()}" class="mt-3">
-                        <h5 th:if="${post.title != null}" th:text="${post.title}">Tiêu đề video</h5>
-                        <div class="video-meta text-secondary mb-2">
-                            <span th:if="${post.videoCategory != null}"
-                                  th:text="${post.videoCategory.name}">Thể loại</span>
-                            <span th:if="${post.videoCategory != null}"> · </span>
-                            <a th:href="@{/videos/{id}(id=${post.id})}">Xem chi tiết</a>
+                    <!-- Content -->
+                    <p class="post-content mb-2" th:text="${post.content}">Nội dung bài viết</p>
+                    
+                    <!-- Share Post -->
+                    <div th:if="${post.originalPost != null}" class="border rounded p-3 mt-2 bg-light">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <img th:if="${post.originalPost.author.profile != null and post.originalPost.author.profile.avatarUrl != null}" th:src="${post.originalPost.author.profile.avatarUrl}" class="rounded-circle" width="30" height="30">
+                            <strong th:text="${post.originalPost.author.fullName}"></strong>
                         </div>
-                        <video controls preload="metadata" class="post-video rounded tracked-video"
-                               th:src="${post.videoUrl}"
-                               th:poster="${post.videoPosterUrl}"
-                               th:attr="data-view-url=@{/videos/{id}/view(id=${post.id})},data-post-id=${post.id}">
-                            Trình duyệt của bạn không hỗ trợ video.
+                        <p class="post-content mb-0" th:text="${post.originalPost.content}"></p>
+                    </div>
+
+                    <!-- Media -->
+                    <img th:if="${post.imageUrl != null and !post.imageUrl.isBlank()}" th:src="${post.imageUrl}" class="img-fluid rounded mt-2" alt="Ảnh bài viết">
+                    <div th:if="${post.videoUrl != null and !post.videoUrl.isBlank()}" class="mt-2">
+                        <h6 th:if="${post.title != null}" th:text="${post.title}">Tiêu đề video</h6>
+                        <video controls preload="metadata" class="post-video rounded tracked-video" th:src="${post.videoUrl}" th:poster="${post.videoPosterUrl}" th:attr="data-view-url=@{/videos/{id}/view(id=${post.id})},data-post-id=${post.id}">
                         </video>
                     </div>
 
-                    <!-- ✅ THANH LIKE / SHARE (ĐÃ SỬA) -->
-                    <div class="d-flex justify-content-between align-items-center border-top border-bottom py-2 mt-3">
-                        <div class="text-secondary d-flex flex-wrap gap-3">
-                            <!-- ✅ HIỂN THỊ REACTION STATS -->
-							<span class="reaction-stats" th:id="|reaction-stats-${post.id}|">
-							    <span class="emoji-stack">
-							        <th:block th:if="${reactionStats != null and reactionStats.containsKey(post.id)}">
-									    <span th:each="entry, iter : ${reactionStats.get(post.id)}"
-									          th:if="${iter.index < 3 and entry.key != null}"
-									          th:text="${entry.key.emoji}">👍</span>
-									</th:block>
-							    </span>
-							    <strong th:id="|like-count-${post.id}|"
-							            th:text="${likeCounts != null ? likeCounts[post.id] : 0}">0</strong>
-							</span>
-                            <span th:if="${post.videoUrl != null}"><strong th:id="|view-count-${post.id}|"
-                                  th:text="${post.viewCount}">0</strong> lượt xem</span>
-                            <span th:if="${post.videoUrl != null}"><strong th:id="|share-count-${post.id}|"
-                                  th:text="${post.shareCount}">0</strong> lượt chia sẻ</span>
+                    <!-- STATS HÀNG TRÊN -->
+                    <div class="d-flex justify-content-between text-secondary mt-3 pb-2 px-1" style="font-size: 0.9rem;">
+                        <!-- Bên trái: Like stats -->
+                        <div class="d-flex align-items-center gap-1">
+                            <span class="reaction-stats" th:id="|reaction-stats-${post.id}|">
+                                <span class="emoji-stack">
+                                    <th:block th:if="${reactionStats != null and reactionStats.containsKey(post.id)}">
+                                        <span th:each="entry, iter : ${reactionStats.get(post.id)}" th:if="${iter.index < 3 and entry.key != null}" th:text="${entry.key.emoji}">👍</span>
+                                    </th:block>
+                                </span>
+                                <strong th:id="|like-count-${post.id}|" th:text="${likeCounts != null ? likeCounts[post.id] : 0}">0</strong>
+                            </span>
                         </div>
-                        <div class="d-flex gap-2">
-                            <!-- ✅ REACTION PICKER (THAY THẾ FORM LIKE CŨ) -->
-                            <div class="reaction-wrapper">
-                                <div class="reaction-picker">
-                                    <button type="button" class="reaction-btn" data-reaction="LIKE"  title="Thích">👍</button>
-                                    <button type="button" class="reaction-btn" data-reaction="LOVE"  title="Yêu thích">❤️</button>
-                                    <button type="button" class="reaction-btn" data-reaction="HAHA"  title="Haha">😆</button>
-                                    <button type="button" class="reaction-btn" data-reaction="WOW"   title="Wow">😮</button>
-                                    <button type="button" class="reaction-btn" data-reaction="SAD"   title="Buồn">😢</button>
-                                    <button type="button" class="reaction-btn" data-reaction="ANGRY" title="Phẫn nộ">😡</button>
-                                </div>
+                        <!-- Bên phải: Comment & Share -->
+                        <div>
+                            <span class="me-2"><strong th:id="|comment-count-${post.id}|" th:text="${commentsByPost[post.id] != null ? commentsByPost[post.id].size() : 0}">0</strong> bình luận</span>
+                            <span><strong th:id="|share-count-${post.id}|" th:text="${post.shareCount}">0</strong> chia sẻ</span>
+                        </div>
+                    </div>
 
-							                                <button type="button"
-							        class="btn btn-sm reaction-main-btn"
-							        th:attr="data-post-id=${post.id},
-							                 data-user-reaction=${userReactions != null and userReactions[post.id] != null ? userReactions[post.id].name() : ''}"
-							        th:classappend="${userReactions != null and userReactions[post.id] != null} ? 'btn-primary' : 'btn-outline-primary'">
-							    <span class="reaction-icon"
-							          th:text="${userReactions != null and userReactions[post.id] != null ? userReactions[post.id].emoji : '👍'}">👍</span>
-							    <span class="reaction-label"
-							          th:text="${userReactions != null and userReactions[post.id] != null ? userReactions[post.id].label : 'Thích'}">Thích</span>
-							</button>
+                    <!-- ACTION BAR HÀNG DƯỚI -->
+                    <div class="d-flex justify-content-between border-top py-1">
+                        <!-- Nút Like -->
+                        <div class="reaction-wrapper d-flex">
+                            <div class="reaction-picker">
+                                <button type="button" class="reaction-btn" data-reaction="LIKE"  title="Thích">👍</button>
+                                <button type="button" class="reaction-btn" data-reaction="LOVE"  title="Yêu thích">❤️</button>
+                                <button type="button" class="reaction-btn" data-reaction="HAHA"  title="Haha">😆</button>
+                                <button type="button" class="reaction-btn" data-reaction="WOW"   title="Wow">😮</button>
+                                <button type="button" class="reaction-btn" data-reaction="SAD"   title="Buồn">😢</button>
+                                <button type="button" class="reaction-btn" data-reaction="ANGRY" title="Phẫn nộ">😡</button>
                             </div>
-
-                            <button th:if="${post.videoUrl != null}" type="button"
-                                    class="btn btn-outline-success btn-sm share-video-button"
-                                    th:attr="data-share-endpoint=@{/videos/{id}/share(id=${post.id})},data-share-url=@{/videos/{id}(id=${post.id})},data-share-title=${post.title},data-post-id=${post.id}">
-                                Chia sẻ
+                            <button type="button" class="btn action-btn w-100 d-flex justify-content-center align-items-center gap-2 reaction-main-btn" 
+                                    th:attr="data-post-id=${post.id}, data-user-reaction=${userReactions != null and userReactions[post.id] != null ? userReactions[post.id].name() : ''}">
+                                <span class="reaction-icon" th:text="${userReactions != null and userReactions[post.id] != null ? userReactions[post.id].emoji : '👍'}">👍</span>
+                                <span class="reaction-label" th:text="${userReactions != null and userReactions[post.id] != null ? userReactions[post.id].label : 'Thích'}">Thích</span>
                             </button>
                         </div>
+
+                        <!-- Nút Comment -->
+                        <button type="button" class="btn action-btn w-100 d-flex justify-content-center align-items-center gap-2" th:attr="onclick=|openCommentModal(${post.id})|">
+                            <i class="bi bi-chat"></i> Bình luận
+                        </button>
+
+                        <!-- Nút Share -->
+                        <button type="button" class="btn action-btn w-100 d-flex justify-content-center align-items-center gap-2 share-post-button" th:attr="data-post-id=${post.id}, data-author-name=${post.author.fullName}">
+                            <i class="bi bi-share"></i> Chia sẻ
+                        </button>
                     </div>
 
-                    <div th:if="${commentError != null and commentPostId == post.id}"
-                         class="alert alert-danger py-2 mt-3" th:text="${commentError}"></div>
-
-                    <div class="mt-3" th:id="|comments-post-${post.id}|">
-                        <div th:each="comment : ${commentsByPost[post.id]}"
-                             class="comment-box rounded p-2 mb-2">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <a th:href="@{'/profile/' + ${comment.author.username}}"
-                                       class="text-decoration-none text-dark">
-                                        <strong th:text="${comment.author.fullName}">Người bình luận</strong>
-                                    </a>
-                                    <a th:href="@{'/profile/' + ${comment.author.username}}"
-                                       class="text-decoration-none text-secondary">
-                                        <small class="ms-1"
-                                               th:text="'@' + ${comment.author.username}">@username</small>
-                                    </a>
+                    <!-- KHU VỰC COMMENT ẨN -->
+                    <div class="d-none" th:id="|hidden-comments-${post.id}|">
+                        <div class="mt-3" th:id="|comments-post-${post.id}|">
+                            <div th:each="comment : ${commentsByPost[post.id]}" class="d-flex mb-3">
+                                <a th:href="@{'/profile/' + ${comment.author.username}}" class="text-decoration-none me-2">
+                                    <img th:if="${comment.author.profile != null and comment.author.profile.avatarUrl != null}" th:src="${comment.author.profile.avatarUrl}" class="rounded-circle" style="width: 32px; height: 32px; object-fit: cover;">
+                                    <div th:if="${comment.author.profile == null or comment.author.profile.avatarUrl == null}" class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; font-weight: bold; font-size: 14px;" th:text="${#strings.substring(comment.author.fullName, 0, 1)}">U</div>
+                                </a>
+                                <div class="flex-grow-1">
+                                    <div class="comment-bubble px-3 py-2">
+                                        <a th:href="@{'/profile/' + ${comment.author.username}}" class="text-decoration-none text-dark fw-bold d-block" style="font-size: 0.9rem;" th:text="${comment.author.fullName}">Tác giả</a>
+                                        <div class="text-dark" style="font-size: 0.95rem;" th:text="${comment.content}">Nội dung</div>
+                                    </div>
+                                    <div class="ms-3 mt-1 small text-secondary d-flex gap-3 align-items-center">
+                                        <span class="comment-action">Thích</span>
+                                        <span class="comment-action">Trả lời</span>
+                                        <span th:text="${comment.createdAt}">Thời gian</span>
+                                        <form th:if="${currentUser.id == comment.author.id}" th:action="@{/comments/{id}/delete(id=${comment.id})}" method="post" onsubmit="return confirm('Bạn có chắc muốn xóa bình luận?')" class="mb-0">
+                                            <button type="submit" class="btn btn-link text-danger p-0 small text-decoration-none fw-semibold" style="font-size: 0.8rem; margin-top: -2px;">Xóa</button>
+                                        </form>
+                                    </div>
                                 </div>
-                                <form th:if="${currentUser.id == comment.author.id}"
-                                      th:action="@{/comments/{id}/delete(id=${comment.id})}" method="post"
-                                      onsubmit="return confirm('Bạn có chắc muốn xóa bình luận?')">
-                                    <button type="submit" class="btn btn-link text-danger btn-sm p-0">Xóa</button>
-                                </form>
                             </div>
-                            <div class="post-content mt-1" th:text="${comment.content}">Nội dung bình luận</div>
-                            <small class="text-secondary" th:text="${comment.createdAt}">Thời gian bình luận</small>
                         </div>
+
+                        <form th:action="@{/posts/{id}/comments(id=${post.id})}" method="post" class="comment-form d-flex gap-2 mt-3" th:attr="data-post-id=${post.id}">
+                            <input type="text" name="content" maxlength="2000" class="form-control comment-input-rounded" placeholder="Viết bình luận..." required>
+                            <button type="submit" class="btn btn-primary rounded-circle" style="width: 40px; height: 40px;"><i class="bi bi-send"></i></button>
+                        </form>
                     </div>
 
-                    <form th:action="@{/posts/{id}/comments(id=${post.id})}" method="post"
-                          class="comment-form d-flex gap-2 mt-3"
-                          th:attr="data-post-id=${post.id}">
-                        <input type="text" name="content" maxlength="2000" class="form-control"
-                               placeholder="Viết bình luận..." required>
-                        <button type="submit" class="btn btn-primary">Gửi</button>
-                    </form>
                 </div>
             </article>
 
             <!-- PHÂN TRANG -->
-            <nav th:if="${posts.totalPages > 1}"
-                 class="d-flex justify-content-center align-items-center gap-3 mt-4">
-                <a th:if="${posts.hasPrevious()}"
-                   th:href="@{/feed(page=${posts.number - 1}, keyword=${keyword}, type=${type}, sort=${sort})}"
-                   class="btn btn-outline-primary btn-sm">Trang trước</a>
-                <span>Trang <strong th:text="${posts.number + 1}">1</strong> /
-                    <strong th:text="${posts.totalPages}">1</strong></span>
-                <a th:if="${posts.hasNext()}"
-                   th:href="@{/feed(page=${posts.number + 1}, keyword=${keyword}, type=${type}, sort=${sort})}"
-                   class="btn btn-outline-primary btn-sm">Trang sau</a>
+            <nav th:if="${posts.totalPages > 1}" class="d-flex justify-content-center align-items-center gap-3 mt-4">
+                <a th:if="${posts.hasPrevious()}" th:href="@{/feed(page=${posts.number - 1}, keyword=${keyword}, type=${type}, sort=${sort})}" class="btn btn-outline-primary btn-sm">Trang trước</a>
+                <span>Trang <strong th:text="${posts.number + 1}">1</strong> / <strong th:text="${posts.totalPages}">1</strong></span>
+                <a th:if="${posts.hasNext()}" th:href="@{/feed(page=${posts.number + 1}, keyword=${keyword}, type=${type}, sort=${sort})}" class="btn btn-outline-primary btn-sm">Trang sau</a>
             </nav>
         </section>
 
-        <!-- ========== CỘT PHẢI: BẠN BÈ ========== -->
-        <!-- ========== CỘT PHẢI: GỢI Ý KẾT BẠN ========== -->
-			<aside class="col-lg-3">
-			    <!-- Gợi ý kết bạn -->
-			    <div class="card shadow-sm mb-3" th:if="${friendSuggestions != null and !friendSuggestions.isEmpty()}">
-			        <div class="card-body">
-			            <h6 class="fw-bold mb-3">👥 Những người bạn có thể biết</h6>
-			
-			            <div th:each="suggestion : ${friendSuggestions}" 
-			                 class="d-flex align-items-center gap-2 mb-3 pb-3 border-bottom suggestion-item"
-			                 th:attr="data-user-id=${suggestion.id}">
-			
-			                <!-- Avatar -->
-			                <a th:href="@{'/profile/' + ${suggestion.username}}"
-			                   class="text-decoration-none flex-shrink-0">
-			                    <img th:if="${suggestion.profile != null and suggestion.profile.avatarUrl != null}"
-			                         th:src="${suggestion.profile.avatarUrl}"
-			                         class="rounded-circle"
-			                         style="width: 48px; height: 48px; object-fit: cover;"
-			                         alt="Avatar">
-			                    <div th:if="${suggestion.profile == null or suggestion.profile.avatarUrl == null}"
-			                         class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center"
-			                         style="width: 48px; height: 48px; font-weight: bold; font-size: 18px;"
-			                         th:text="${#strings.substring(suggestion.fullName, 0, 1)}">U</div>
-			                </a>
-			
-			                <!-- Info -->
-			                <div class="flex-grow-1 min-width-0">
-			                    <a th:href="@{'/profile/' + ${suggestion.username}}"
-			                       class="text-decoration-none text-dark d-block">
-			                        <div class="fw-semibold text-truncate" 
-			                             th:text="${suggestion.fullName}">Họ tên</div>
-			                    </a>
-			                    <small class="text-secondary d-block text-truncate"
-			                           th:if="${mutualFriendCounts != null and mutualFriendCounts[suggestion.id] != null and mutualFriendCounts[suggestion.id] > 0}">
-			                        <span th:text="${mutualFriendCounts[suggestion.id]}">0</span> bạn chung
-			                    </small>
-			                    <small class="text-secondary d-block text-truncate"
-			                           th:if="${mutualFriendCounts == null or mutualFriendCounts[suggestion.id] == null or mutualFriendCounts[suggestion.id] == 0}">
-			                        Chưa có bạn chung
-			                    </small>
-			                </div>
-			
-			                <!-- Nút kết bạn -->
-			                <button type="button"
-			                        class="btn btn-sm btn-primary flex-shrink-0 friend-request-btn"
-			                        th:attr="data-user-id=${suggestion.id}">
-			                    Kết bạn
-			                </button>
-			            </div>
-			        </div>
-			    </div>
-			
-			    <!-- Card bạn bè cũ -->
-			    <div class="card shadow-sm">
-			        <div class="card-body">
-			            <h5>Bạn bè</h5>
-			            <p class="text-secondary">Tìm kiếm người dùng và kiểm tra lời mời kết bạn.</p>
-			            <a th:href="@{/friends}" class="btn btn-outline-primary btn-sm">Quản lý bạn bè</a>
-			        </div>
-			    </div>
-			</aside>
+        <!-- ========== CỘT PHẢI ========== -->
+        <aside class="col-lg-3">
+            <div class="card shadow-sm mb-3 border-0 rounded-4" th:if="${friendSuggestions != null and !friendSuggestions.isEmpty()}">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-3">👥 Những người bạn có thể biết</h6>
+                    <div th:each="suggestion : ${friendSuggestions}" class="d-flex align-items-center gap-2 mb-3 pb-3 border-bottom suggestion-item" th:attr="data-user-id=${suggestion.id}">
+                        <a th:href="@{'/profile/' + ${suggestion.username}}" class="text-decoration-none flex-shrink-0">
+                            <img th:if="${suggestion.profile != null and suggestion.profile.avatarUrl != null}" th:src="${suggestion.profile.avatarUrl}" class="rounded-circle" style="width: 48px; height: 48px; object-fit: cover;" alt="Avatar">
+                            <div th:if="${suggestion.profile == null or suggestion.profile.avatarUrl == null}" class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; font-weight: bold; font-size: 18px;" th:text="${#strings.substring(suggestion.fullName, 0, 1)}">U</div>
+                        </a>
+                        <div class="flex-grow-1 min-width-0">
+                            <a th:href="@{'/profile/' + ${suggestion.username}}" class="text-decoration-none text-dark d-block">
+                                <div class="fw-semibold text-truncate" th:text="${suggestion.fullName}">Họ tên</div>
+                            </a>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-primary flex-shrink-0 friend-request-btn rounded-pill fw-semibold" th:attr="data-user-id=${suggestion.id}">Kết bạn</button>
+                    </div>
+                </div>
+            </div>
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-body">
+                    <h5 class="fw-bold">Bạn bè</h5>
+                    <p class="text-secondary">Tìm kiếm người dùng và kiểm tra lời mời kết bạn.</p>
+                    <a th:href="@{/friends}" class="btn btn-outline-primary btn-sm rounded-pill fw-semibold">Quản lý bạn bè</a>
+                </div>
+            </div>
+        </aside>
     </div>
 </main>
 
+<!-- ===================== POPUP TẠO BÀI VIẾT ===================== -->
+<div class="modal fade" id="createPostModal" tabindex="-1" aria-labelledby="createPostModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title w-100 text-center fw-bold" id="createPostModalLabel">Tạo bài viết</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form th:action="@{/posts}" th:object="${postForm}" method="post" enctype="multipart/form-data" id="postForm">
+                    <div class="d-flex align-items-center mb-3">
+                        <img th:if="${currentUser.profile != null and currentUser.profile.avatarUrl != null}" th:src="${currentUser.profile.avatarUrl}" class="rounded-circle me-2" width="45" height="45" style="object-fit:cover;">
+                        <div th:if="${currentUser.profile == null or currentUser.profile.avatarUrl == null}" class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center me-2" style="width: 45px; height: 45px; font-weight: bold;" th:text="${#strings.substring(currentUser.fullName, 0, 1)}"></div>
+                        <div>
+                            <div class="fw-bold" th:text="${currentUser.fullName}">Họ tên</div>
+                            <select id="visibility" th:field="*{visibility}" class="form-select form-select-sm border-0 bg-light mt-1" style="width: 150px; font-size: 0.85rem;">
+                                <option value="PUBLIC">🌐 Công khai</option>
+                                <option value="FRIENDS">👥 Bạn bè</option>
+                                <option value="PRIVATE">🔒 Chỉ mình tôi</option>
+                            </select>
+                        </div>
+                    </div>
+                    <textarea class="form-control border-0 px-0 shadow-none fs-5 mb-3" rows="4" maxlength="5000" th:field="*{content}" placeholder="Bạn đang nghĩ gì?" style="resize: none;"></textarea>
+                    <div class="border rounded p-3 mb-3 bg-light">
+                        <label class="form-label fw-bold small text-secondary">Thêm vào bài viết của bạn</label>
+                        <div class="mb-2">
+                            <label for="image" class="form-label small mb-0"><i class="bi bi-image text-success"></i> Ảnh bài viết</label>
+                            <input id="image" type="file" th:field="*{image}" class="form-control form-control-sm" accept="image/jpeg,image/png,image/gif">
+                        </div>
+                        <details class="mb-2">
+                            <summary class="small text-primary" style="cursor: pointer;"><i class="bi bi-camera-video text-danger"></i> Thêm Video (Tùy chọn)</summary>
+                            <div class="mt-2 ps-3 border-start">
+                                <input id="video" type="file" th:field="*{video}" class="form-control form-control-sm mb-2" accept="video/mp4,video/webm,video/ogg,video/quicktime">
+                                <input id="title" type="text" maxlength="200" th:field="*{title}" class="form-control form-control-sm mb-2" placeholder="Tiêu đề video">
+                                <select id="videoCategoryId" th:field="*{videoCategoryId}" class="form-select form-select-sm mb-2">
+                                    <option value="">-- Chọn thể loại --</option>
+                                    <option th:each="category : ${videoCategories}" th:value="${category.id}" th:text="${category.name}">Thể loại</option>
+                                </select>
+                                <input id="videoPoster" type="file" th:field="*{videoPoster}" class="form-control form-control-sm" accept="image/*">
+                            </div>
+                        </details>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 fw-bold fs-5 rounded-3">Đăng</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== POPUP BÌNH LUẬN ===================== -->
+<div class="modal fade" id="commentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title w-100 text-center fw-bold">Bình luận</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="d-flex align-items-center mb-3">
+                    <div id="modal-post-info" class="w-100 bg-light p-3 rounded"></div>
+                </div>
+                <hr>
+                <div id="modal-comment-container"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== POPUP CHIA SẺ ===================== -->
+<div class="modal fade" id="shareModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title w-100 text-center fw-bold">Chia sẻ bài viết</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <div class="modal-body p-4">
+                <div class="d-flex align-items-center mb-3">
+                    <img th:if="${currentUser.profile != null and currentUser.profile.avatarUrl != null}" th:src="${currentUser.profile.avatarUrl}" class="rounded-circle me-2" width="45" height="45" style="object-fit:cover;">
+                    <div th:if="${currentUser.profile == null or currentUser.profile.avatarUrl == null}" class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center me-2" style="width: 45px; height: 45px; font-weight: bold;" th:text="${#strings.substring(currentUser.fullName, 0, 1)}"></div>
+                    <div>
+                        <div class="fw-bold" th:text="${currentUser.fullName}">Họ tên</div>
+                        <select class="form-select form-select-sm border-0 bg-light mt-1" style="width: 150px; font-size: 0.85rem; cursor: pointer;">
+                            <option value="PUBLIC">🌐 Công khai</option>
+                            <option value="FRIENDS">👥 Bạn bè</option>
+                        </select>
+                    </div>
+                </div>
+
+                <textarea id="shareCaption" class="form-control border-0 px-0 shadow-none fs-5 mb-3" rows="3" placeholder="Hãy nói gì đó về bài viết này..." style="resize: none;"></textarea>
+                
+                <div class="border rounded p-3 bg-light">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <i class="bi bi-person-circle text-secondary fs-5"></i>
+                        <strong id="shareOriginalAuthor">Tác giả bài viết</strong>
+                    </div>
+                    <p class="mb-0 text-dark" id="shareOriginalContent" style="max-height: 120px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; font-size: 0.95rem;">
+                        Nội dung bài viết gốc...
+                    </p>
+                </div>
+
+                <button type="button" class="btn btn-primary w-100 fw-bold fs-5 rounded-3 mt-4" id="btnSubmitShare">Đăng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- ===================== CHAT SIDEBAR ===================== -->
-<div id="chatBackdrop" class="chat-backdrop d-none"></div>
-<aside id="chatSidebar" class="chat-sidebar"
-       th:attr="data-contacts-url=@{/messages/api/contacts},data-history-url=@{/messages/api/conversation},data-message-url=@{/messages},data-user-id=${currentUser.id}"
-       aria-label="Đoạn chat">
+<aside id="chatSidebar" class="chat-sidebar" th:attr="data-contacts-url=@{/messages/api/contacts},data-history-url=@{/messages/api/conversation},data-message-url=@{/messages},data-user-id=${currentUser.id}" aria-label="Đoạn chat">
     <div class="chat-sidebar-header">
         <div class="d-flex justify-content-between align-items-center mb-2">
             <h5 class="mb-0 fw-bold">Đoạn chat</h5>
-            <button id="chatSidebarClose" type="button" class="chat-icon-button"
-                    aria-label="Đóng danh sách chat">×</button>
+            <!-- Nút tắt chat -->
+            <button id="chatSidebarClose" type="button" class="chat-icon-button" aria-label="Đóng danh sách chat">×</button>
         </div>
-        <input id="chatSearch" class="chat-search" type="search"
-               placeholder="Tìm kiếm trên Messenger" aria-label="Tìm bạn bè">
+        <input id="chatSearch" class="chat-search" type="search" placeholder="Tìm kiếm trên Messenger" aria-label="Tìm bạn bè">
     </div>
     <div class="chat-filters">
         <button type="button" class="chat-filter active" data-chat-filter="all">Tất cả</button>
@@ -669,34 +555,42 @@
     </div>
 </aside>
 
-<button id="chatLauncher" class="chat-launcher btn btn-primary rounded-pill shadow"
-        type="button">Đoạn chat</button>
-
+<!-- Khung chat window nhỏ (khi bấm vào 1 người) -->
 <section id="chatWindow" class="chat-window d-none" role="dialog" aria-label="Trò chuyện">
     <div class="chat-window-header">
         <span id="chatPartnerAvatar" class="chat-avatar">?</span>
         <strong id="chatPartnerName" class="text-truncate flex-grow-1">Trò chuyện</strong>
-        <a id="chatFullLink" th:href="@{/messages}"
-           class="chat-icon-button d-inline-flex align-items-center justify-content-center text-decoration-none"
-           title="Mở trang Tin nhắn" aria-label="Mở trang Tin nhắn">↗</a>
-        <button id="chatWindowClose" type="button" class="chat-icon-button"
-                aria-label="Đóng cuộc trò chuyện">×</button>
+        <a id="chatFullLink" th:href="@{/messages}" class="chat-icon-button d-inline-flex align-items-center justify-content-center text-decoration-none" title="Mở trang Tin nhắn" aria-label="Mở trang Tin nhắn">↗</a>
+        <button id="chatWindowClose" type="button" class="chat-icon-button" aria-label="Đóng cuộc trò chuyện">×</button>
     </div>
     <div id="chatError" class="alert alert-danger m-2 py-2 d-none" role="alert"></div>
     <div id="chatScroll" class="chat-scroll">
-        <button id="chatOlderButton" type="button"
-                class="btn btn-sm btn-outline-light w-100 mb-2 d-none">Tin cũ hơn</button>
+        <button id="chatOlderButton" type="button" class="btn btn-sm btn-outline-light w-100 mb-2 d-none">Tin cũ hơn</button>
         <div id="chatMessages"></div>
     </div>
     <form id="chatComposer" class="chat-composer" method="post">
-        <input id="chatInput" name="content" type="text" class="form-control"
-               maxlength="2000" placeholder="Nhập tin nhắn..." autocomplete="off" required>
+        <input id="chatInput" name="content" type="text" class="form-control" maxlength="2000" placeholder="Nhập tin nhắn..." autocomplete="off" required>
         <button id="chatSendButton" type="submit" class="btn btn-primary">Gửi</button>
     </form>
 </section>
 
+<!-- Khung chứa thông báo Realtime -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;">
+    <div id="realtimeToast" class="toast align-items-center text-bg-primary border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="bi bi-bell-fill me-2"></i> <strong id="toastSender"></strong> <span id="toastMessage"></span>
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+
 <!-- ===================== SCRIPTS ===================== -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7.2.0/bundles/stomp.umd.min.js"></script>
+
+<!-- Xử lý WebSocket, Badge thông báo -->
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         const messageBadge = document.getElementById("messageBadge");
@@ -705,95 +599,210 @@
         async function refreshUnreadMessages() {
             if (!messageBadge) return;
             const requestNumber = ++latestCountRequest;
-
             try {
-                const response = await fetch(messageBadge.dataset.countUrl, {
-                    headers: { "Accept": "application/json" },
-                    credentials: "same-origin"
-                });
-                if (!response.ok || !(response.headers.get("content-type") || "")
-                        .includes("application/json")) {
-                    throw new Error("Không lấy được số tin nhắn chưa đọc.");
-                }
-
+                const response = await fetch(messageBadge.dataset.countUrl, { headers: { "Accept": "application/json" }, credentials: "same-origin" });
+                if (!response.ok) throw new Error();
                 const data = await response.json();
                 if (requestNumber !== latestCountRequest) return;
-
                 const count = Number(data.unreadCount);
-                if (!Number.isSafeInteger(count) || count < 0) return;
                 messageBadge.textContent = String(count);
                 messageBadge.classList.toggle("d-none", count === 0);
-            } catch (error) {
-                console.error(error);
-            }
+            } catch (error) { }
         }
 
         refreshUnreadMessages();
         document.addEventListener("fakebook:refresh-unread", refreshUnreadMessages);
         window.addEventListener("focus", refreshUnreadMessages);
-        document.addEventListener("visibilitychange", function () {
-            if (document.visibilityState === "visible") refreshUnreadMessages();
-        });
 
-        if (typeof StompJs === "undefined") {
-            console.error("Không tải được StompJS; thông báo trực tiếp tạm thời không hoạt động.");
-            return;
-        }
+        if (typeof StompJs === "undefined") return;
 
         const socketUrl = window.location.origin + "/ws";
-        const stompClient = new StompJs.Client({
-            webSocketFactory: () => new SockJS(socketUrl),
-            reconnectDelay: 5000
-        });
+        const stompClient = new StompJs.Client({ webSocketFactory: () => new SockJS(socketUrl), reconnectDelay: 5000 });
 
         stompClient.onConnect = function () {
             stompClient.subscribe("/user/queue/notifications", function (frame) {
                 const data = JSON.parse(frame.body);
                 const badge = document.getElementById("notificationBadge");
                 if (badge) {
-                    badge.textContent = data.unreadCount;
-                    badge.classList.toggle("d-none", Number(data.unreadCount) === 0);
+                    let currentCount = parseInt(badge.textContent) || 0;
+                    badge.textContent = currentCount + 1;
+                    badge.classList.remove("d-none");
+                }
+                if (data.senderName) {
+                    document.getElementById("toastSender").innerText = data.senderName;
+                    document.getElementById("toastMessage").innerText = data.message;
+                    const toastElement = document.getElementById('realtimeToast');
+                    if (toastElement) {
+                        const toast = new bootstrap.Toast(toastElement, { delay: 5000 });
+                        toast.show();
+                    }
                 }
             });
 
             stompClient.subscribe("/user/queue/messages", function (frame) {
                 refreshUnreadMessages();
-                try {
-                    document.dispatchEvent(new CustomEvent("fakebook:incoming-message", {
-                        detail: JSON.parse(frame.body)
-                    }));
-                } catch (error) {
-                    console.error("Dữ liệu tin nhắn không hợp lệ:", error);
-                }
+                document.dispatchEvent(new CustomEvent("fakebook:incoming-message", { detail: JSON.parse(frame.body) }));
             });
             stompClient.subscribe("/user/queue/messages-read", function (frame) {
-                try {
-                    document.dispatchEvent(new CustomEvent("fakebook:message-read", {
-                        detail: JSON.parse(frame.body)
-                    }));
-                } catch (error) {
-                    console.error("Dữ liệu đã xem không hợp lệ:", error);
-                }
+                document.dispatchEvent(new CustomEvent("fakebook:message-read", { detail: JSON.parse(frame.body) }));
             });
             refreshUnreadMessages();
         };
-
-        stompClient.onStompError = function (frame) {
-            console.error("Lỗi WebSocket:", frame.headers.message);
-        };
-
         stompClient.activate();
     });
 </script>
+
+<!-- Các file JS xử lý riêng -->
 <script th:src="@{/js/feed-chat.js}"></script>
 <script th:src="@{/js/video-interactions.js}"></script>
-<script th:src="@{/js/post-interactions.js}"></script>
+
+<!-- XỬ LÝ LIKE, SHARE, COMMENT -->
 <script>
+    // 1. MỞ MODAL BÌNH LUẬN
+    window.openCommentModal = function(postId) {
+        const postArticle = document.getElementById(`post-${postId}`);
+        const authorName = postArticle.querySelector('h6').innerText;
+        const postContent = postArticle.querySelector('.post-content').innerText;
+        
+        document.getElementById('modal-post-info').innerHTML = `
+            <strong>${authorName}</strong>
+            <p class="mb-0 mt-2">${postContent}</p>
+        `;
+
+        const hiddenComments = document.getElementById(`hidden-comments-${postId}`).innerHTML;
+        document.getElementById('modal-comment-container').innerHTML = hiddenComments;
+
+        new bootstrap.Modal(document.getElementById('commentModal')).show();
+    };
+
+    // 2. XỬ LÝ GỬI BÌNH LUẬN QUA AJAX
+    document.addEventListener("submit", async function (event) {
+        const form = event.target;
+        if (!(form instanceof HTMLFormElement) || !form.classList.contains("comment-form")) return;
+
+        event.preventDefault();
+        const button = form.querySelector('button[type="submit"]');
+        const input = form.querySelector('input[name="content"]');
+        const postId = form.dataset.postId;
+        
+        if (!input.value.trim()) return;
+        button.disabled = true;
+
+        try {
+            const response = await fetch(`/api/posts/${postId}/comments`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "Accept": "application/json" },
+                body: JSON.stringify({ content: input.value })
+            });
+
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || "Không thể gửi bình luận.");
+
+            const item = document.createElement("div");
+            item.className = "d-flex mb-3";
+            
+            let avatarHtml = '';
+            if (data.authorAvatar && data.authorAvatar !== "/images/default-avatar.png") {
+                avatarHtml = `<img src="${data.authorAvatar}" class="rounded-circle" style="width: 32px; height: 32px; object-fit: cover;">`;
+            } else {
+                avatarHtml = `<div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; font-weight: bold; font-size: 14px;">${data.authorFullName.charAt(0)}</div>`;
+            }
+
+            item.innerHTML = `
+                <a href="/profile/${data.authorUsername}" class="text-decoration-none me-2">
+                    ${avatarHtml}
+                </a>
+                <div class="flex-grow-1">
+                    <div class="comment-bubble px-3 py-2">
+                        <a href="/profile/${data.authorUsername}" class="text-decoration-none text-dark fw-bold d-block" style="font-size: 0.9rem;">${data.authorFullName}</a>
+                        <div class="text-dark" style="font-size: 0.95rem;">${data.content}</div>
+                    </div>
+                    
+                    <div class="ms-3 mt-1 small text-secondary d-flex gap-3 align-items-center">
+                        <span class="comment-action">Thích</span>
+                        <span class="comment-action">Trả lời</span>
+                        <span>${data.createdAt || "Vừa xong"}</span>
+                    </div>
+                </div>
+            `;
+            
+            const list = document.getElementById(`comments-post-${postId}`);
+            list.appendChild(item);
+            input.value = "";
+            
+            const countSpan = document.getElementById(`comment-count-${postId}`);
+            if (countSpan) {
+                let currentCount = parseInt(countSpan.innerText) || 0;
+                countSpan.innerText = currentCount + 1;
+            }
+
+            const modalBody = document.querySelector('.modal-dialog-scrollable .modal-body');
+            if (modalBody) modalBody.scrollTop = modalBody.scrollHeight;
+
+        } catch (error) {
+            alert(error.message);
+        } finally {
+            button.disabled = false;
+        }
+    }, true);
+
+    // 3. XỬ LÝ CHIA SẺ BÀI VIẾT
+    let currentSharePostId = null;
+
+    document.addEventListener("click", function (event) {
+        const btn = event.target.closest(".share-post-button");
+        if (!btn) return;
+
+        currentSharePostId = btn.dataset.postId;
+        
+        const postArticle = document.getElementById(`post-${currentSharePostId}`);
+        const authorName = postArticle.querySelector('h6').innerText;
+        const postContent = postArticle.querySelector('.post-content').innerText;
+
+        document.getElementById('shareOriginalAuthor').innerText = authorName;
+        document.getElementById('shareOriginalContent').innerText = postContent;
+        document.getElementById('shareCaption').value = "";
+
+        new bootstrap.Modal(document.getElementById('shareModal')).show();
+    });
+
+    document.getElementById('btnSubmitShare').addEventListener('click', async function() {
+        if (!currentSharePostId) return;
+
+        const caption = document.getElementById('shareCaption').value;
+        const btn = this;
+        btn.disabled = true;
+        btn.innerText = "Đang đăng...";
+
+        try {
+            const response = await fetch(`/api/posts/${currentSharePostId}/share`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ caption: caption })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                bootstrap.Modal.getInstance(document.getElementById('shareModal')).hide();
+                window.location.reload(); 
+            } else {
+                alert(data.error || "Không thể chia sẻ.");
+            }
+        } catch (error) {
+            console.error("Lỗi Share:", error);
+            alert("Đã có lỗi xảy ra khi chia sẻ.");
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "Đăng";
+        }
+    });
+
+    // 4. TÌM KIẾM REAL-TIME
     (function () {
         const form = document.getElementById("searchForm");
         const input = document.getElementById("searchKeyword");
         if (!form || !input) return;
-
         let timer;
         input.addEventListener("input", function () {
             clearTimeout(timer);
@@ -803,55 +812,9 @@
                 form.submit();
             }, 500);
         });
-
-        input.addEventListener("keydown", function (e) {
-            if (e.key === "Enter") {
-                clearTimeout(timer);
-            }
-        });
     })();
-</script>
-<script>
-    (function () {
-        document.addEventListener("click", async function (event) {
-            const btn = event.target.closest(".friend-request-btn");
-            if (!btn || btn.disabled) return;
 
-            const userId = btn.dataset.userId;
-            btn.disabled = true;
-
-            try {
-                const response = await fetch(`/friends/request/${userId}`, {
-                    method: "POST",
-                    headers: {
-                        "X-Requested-With": "XMLHttpRequest"
-                    }
-                });
-
-                if (response.status === 401 || response.status === 403) {
-                    alert("Vui lòng đăng nhập để kết bạn.");
-                    btn.disabled = false;
-                    return;
-                }
-
-                if (!response.ok) {
-                    throw new Error("Không thể gửi lời mời kết bạn.");
-                }
-
-                // Đổi nút thành "Đã gửi"
-                btn.textContent = "Đã gửi";
-                btn.classList.remove("btn-primary");
-                btn.classList.add("btn-secondary");
-                btn.disabled = true;
-
-            } catch (error) {
-                alert(error.message);
-                btn.disabled = false;
-            }
-        });
-    })();
-</script>
-<script>
+    // 5. GỬI LỜI MỜI KẾT BẠN
     (function () {
         document.addEventListener("click", async function (event) {
             const btn = event.target.closest(".friend-request-btn");
@@ -864,30 +827,15 @@
             try {
                 const response = await fetch(`/friends/request/${userId}`, {
                     method: "POST",
-                    headers: {
-                        "X-Requested-With": "XMLHttpRequest",
-                        "Accept": "application/json"
-                    }
+                    headers: { "X-Requested-With": "XMLHttpRequest", "Accept": "application/json" }
                 });
 
-                // Kiểm tra server có trả JSON không
-                const contentType = response.headers.get("content-type") || "";
-                if (!contentType.includes("application/json")) {
-                    throw new Error("Server chưa trả JSON. Kiểm tra lại FriendshipController.");
-                }
-
+                if (!response.headers.get("content-type")?.includes("application/json")) throw new Error("Lỗi Server.");
                 const data = await response.json();
+                if (!response.ok || !data.success) throw new Error(data.message);
 
-                if (!response.ok || !data.success) {
-                    throw new Error(data.message || "Không thể gửi lời mời kết bạn.");
-                }
-
-                // Đổi nút thành "Đã gửi"
                 btn.textContent = "Đã gửi";
-                btn.classList.remove("btn-primary");
-                btn.classList.add("btn-secondary");
-                // Giữ disabled = true để không click lại
-
+                btn.classList.replace("btn-primary", "btn-secondary");
             } catch (error) {
                 alert(error.message);
                 btn.textContent = originalText;
@@ -896,5 +844,9 @@
         });
     })();
 </script>
+
+<!-- JS Xử lý Dark Mode -->
+<script th:src="@{/js/theme.js}"></script>
+
 </body>
 </html>

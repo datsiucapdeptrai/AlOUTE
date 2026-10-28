@@ -4,111 +4,110 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Đăng ký | FAKEBOOK</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
-          rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-color: #f0f2f5;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .card-register {
+            width: 100%;
+            max-width: 500px;
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+        .brand-logo {
+            color: #1877f2;
+            font-weight: 800;
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 5px;
+            display: block;
+            text-decoration: none;
+        }
+    </style>
 </head>
-<body class="bg-light">
-<nav class="navbar navbar-dark bg-primary">
-    <div class="container">
-        <a class="navbar-brand fw-bold" th:href="@{/}">
-            FAKEBOOK
-        </a>
-    </div>
-</nav>
+<body>
 
-<main class="container py-5">
-    <div class="card border-0 shadow mx-auto"
-         style="max-width: 620px">
+<div class="container d-flex justify-content-center">
+    <div class="card card-register">
         <div class="card-body p-4 p-md-5">
-            <h1 class="h3 text-center fw-bold">
-                Tạo tài khoản FAKEBOOK
-            </h1>
-            <p class="text-secondary text-center mb-4">
-                Đăng ký và xác thực email bằng mã OTP
-            </p>
+            <a th:href="@{/}" class="brand-logo">FAKEBOOK</a>
+            <h2 class="h4 text-center mb-2 fw-semibold">Tạo tài khoản mới</h2>
+            <p class="text-secondary text-center mb-4 small">Nhanh chóng và dễ dàng.</p>
 
-            <div th:if="${registerError}"
-                 class="alert alert-danger"
-                 th:text="${registerError}">
-            </div>
+            <!-- Hiển thị lỗi chung (nếu có) từ Controller -->
+            <div th:if="${registerError}" class="alert alert-danger py-2" th:text="${registerError}"></div>
 
-            <form th:action="@{/register}"
-                  th:object="${registerRequest}"
-                  method="post">
-
-                <div class="mb-3">
-                    <label for="fullName" class="form-label">
-                        Họ và tên
-                    </label>
-                    <input id="fullName"
-                           class="form-control"
-                           th:field="*{fullName}"
-                           autocomplete="name">
-                    <div class="text-danger small"
-                         th:errors="*{fullName}"></div>
+            <form th:action="@{/register}" th:object="${registerRequest}" method="post">
+                
+                <!-- Họ và tên -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <label for="fullName" class="form-label small fw-bold text-muted">Họ và tên</label>
+                        <input type="text" id="fullName" class="form-control" 
+                               th:field="*{fullName}" placeholder="Nhập họ và tên" autocomplete="name">
+                        <div class="text-danger small mt-1" th:errors="*{fullName}"></div>
+                    </div>
                 </div>
 
+                <!-- Tên tài khoản (Username) -->
                 <div class="mb-3">
-                    <label for="username" class="form-label">
-                        Tên tài khoản
-                    </label>
-                    <input id="username"
-                           class="form-control"
-                           th:field="*{username}"
-                           autocomplete="username">
-                    <div class="text-danger small"
-                         th:errors="*{username}"></div>
+                    <label for="username" class="form-label small fw-bold text-muted">Tên tài khoản (Username)</label>
+                    <input type="text" id="username" class="form-control" 
+                           th:field="*{username}" placeholder="Ví dụ: nguyenvana123" autocomplete="username">
+                    <div class="text-danger small mt-1" th:errors="*{username}"></div>
                 </div>
 
+                <!-- Email -->
                 <div class="mb-3">
-                    <label for="email" class="form-label">Email</label>
-                    <input id="email"
-                           type="email"
-                           class="form-control"
-                           th:field="*{email}"
-                           autocomplete="email">
-                    <div class="text-danger small"
-                         th:errors="*{email}"></div>
+                    <label for="email" class="form-label small fw-bold text-muted">Email</label>
+                    <input type="email" id="email" class="form-control" 
+                           th:field="*{email}" placeholder="example@gmail.com" autocomplete="email">
+                    <div class="text-danger small mt-1" th:errors="*{email}"></div>
                 </div>
 
+                <!-- Mật khẩu -->
                 <div class="mb-3">
-                    <label for="password" class="form-label">
-                        Mật khẩu
-                    </label>
-                    <input id="password"
-                           type="password"
-                           class="form-control"
-                           th:field="*{password}"
-                           autocomplete="new-password">
-                    <div class="text-danger small"
-                         th:errors="*{password}"></div>
+                    <label for="password" class="form-label small fw-bold text-muted">Mật khẩu</label>
+                    <input type="password" id="password" class="form-control" 
+                           th:field="*{password}" placeholder="Tối thiểu 8 ký tự" autocomplete="new-password">
+                    <div class="text-danger small mt-1" th:errors="*{password}"></div>
                 </div>
 
+                <!-- Nhập lại mật khẩu -->
                 <div class="mb-4">
-                    <label for="confirmPassword" class="form-label">
-                        Nhập lại mật khẩu
-                    </label>
-                    <input id="confirmPassword"
-                           type="password"
-                           class="form-control"
-                           th:field="*{confirmPassword}"
-                           autocomplete="new-password">
-                    <div class="text-danger small"
-                         th:errors="*{confirmPassword}"></div>
+                    <label for="confirmPassword" class="form-label small fw-bold text-muted">Nhập lại mật khẩu</label>
+                    <input type="password" id="confirmPassword" class="form-control" 
+                           th:field="*{confirmPassword}" placeholder="Nhập lại mật khẩu" autocomplete="new-password">
+                    <div class="text-danger small mt-1" th:errors="*{confirmPassword}"></div>
                 </div>
 
-                <button type="submit"
-                        class="btn btn-primary btn-lg w-100">
-                    Đăng ký và nhận OTP
+                <!-- Nút Submit -->
+                <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold mb-3" style="background-color: #00c853; border-color: #00c853;">
+                    Đăng ký & Gửi mã OTP
                 </button>
+                
             </form>
 
-            <div class="text-center mt-4">
-                Đã có tài khoản?
-                <a th:href="@{/login}">Đăng nhập</a>
+            <hr class="my-4 text-muted">
+            
+            <div class="text-center">
+                <a th:href="@{/login}" class="btn btn-outline-success fw-bold px-4">
+                    Đã có tài khoản? Đăng nhập
+                </a>
             </div>
         </div>
     </div>
-</main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

@@ -1,64 +1,67 @@
 package vn.edu.hcmute.fakebook.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
+import jakarta.persistence.*;
+import lombok.*;
 import vn.edu.hcmute.fakebook.enums.NotificationType;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "notifications")
 @Getter
 @Setter
 @NoArgsConstructor
-public class Notification extends BaseEntity {
+@AllArgsConstructor
+@Builder
+public class Notification {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Người nhận thông báo
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "recipient_id", nullable = false)
+    // Người gửi thông báo (người like, comment...)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sender_id")
+    private UserAccount sender;
+
+    // Người nhận thông báo (chủ bài viết)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "recipient_id")
     private UserAccount recipient;
 
-    // Người thực hiện hành động
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "actor_id", nullable = false)
-    private UserAccount actor;
-
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 30)
+    @Column(length = 50)
     private NotificationType type;
 
-    @Column(
-        nullable = false,
-        columnDefinition = "NVARCHAR(500)"
-    )
+    @Column(columnDefinition = "NVARCHAR(500)")
     private String message;
 
-    // ID của bài viết hoặc lời mời kết bạn
-    @Column(name = "reference_id")
+    // ID của bài viết hoặc bình luận liên quan (để click vào thì nhảy đúng chỗ)
     private Long referenceId;
 
-    @Column(
-        name = "target_url",
-        columnDefinition = "NVARCHAR(500)"
-    )
+    // Đường link dẫn đến bài viết (VD: /feed#post-10)
+    @Column(columnDefinition = "NVARCHAR(500)")
     private String targetUrl;
 
-    @Column(name = "is_read", nullable = false)
+    // QUAN TRỌNG: Tên biến phải là 'read' để JPA hiểu hàm countByRecipientAndReadFalse
+    @Column(name = "is_read")
     private boolean read = false;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    // BỔ SUNG: Cột updated_at để tránh lỗi NULL từ SQL Server
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now(); // Gán thời gian tạo và cập nhật lần đầu
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now(); // Tự động cập nhật thời gian mỗi khi có sửa đổi (ví dụ: đánh dấu đã đọc)
+    }
 }
