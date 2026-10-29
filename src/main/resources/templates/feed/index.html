@@ -611,7 +611,7 @@
         }
 
         refreshUnreadMessages();
-        document.addEventListener("fakebook:refresh-unread", refreshUnreadMessages);
+        document.addEventListener("ALOUTE:refresh-unread", refreshUnreadMessages);
         window.addEventListener("focus", refreshUnreadMessages);
 
         if (typeof StompJs === "undefined") return;
@@ -641,10 +641,10 @@
 
             stompClient.subscribe("/user/queue/messages", function (frame) {
                 refreshUnreadMessages();
-                document.dispatchEvent(new CustomEvent("fakebook:incoming-message", { detail: JSON.parse(frame.body) }));
+                document.dispatchEvent(new CustomEvent("ALOUTE:incoming-message", { detail: JSON.parse(frame.body) }));
             });
             stompClient.subscribe("/user/queue/messages-read", function (frame) {
-                document.dispatchEvent(new CustomEvent("fakebook:message-read", { detail: JSON.parse(frame.body) }));
+                document.dispatchEvent(new CustomEvent("ALOUTE:message-read", { detail: JSON.parse(frame.body) }));
             });
             refreshUnreadMessages();
         };

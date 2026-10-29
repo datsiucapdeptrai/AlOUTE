@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Tìm kiếm - FAKEBOOK</title>
+    <title>Tìm kiếm - ALOUTE</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 </head>
@@ -11,7 +11,7 @@
 <!-- Nhúng Navbar của bạn vào đây (nếu có) -->
 <nav class="navbar navbar-light bg-white shadow-sm mb-4">
     <div class="container">
-        <a class="navbar-brand text-primary fw-bold" th:href="@{/}">FAKEBOOK</a>
+        <a class="navbar-brand text-primary fw-bold" th:href="@{/}">ALOUTE</a>
         <form class="d-flex w-50" th:action="@{/search}" method="get">
             <div class="input-group">
                 <input type="text" name="keyword" class="form-control" th:value="${keyword}" placeholder="Tìm kiếm người dùng...">

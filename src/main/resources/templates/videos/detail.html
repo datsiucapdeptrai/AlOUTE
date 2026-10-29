@@ -3,20 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title th:text="${post.title + ' | FAKEBOOK'}">Chi tiết video</title>
+    <title th:text="${post.title + ' | ALOUTE'}">Chi tiết video</title>
     <meta th:if="${_csrf != null}" name="_csrf" th:content="${_csrf.token}">
     <meta th:if="${_csrf != null}" name="_csrf_header" th:content="${_csrf.headerName}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
         .main-video { width: 100%; max-height: 70vh; background: #000; }
         .comment-box { background: #f0f2f5; }
         .post-content { white-space: pre-wrap; overflow-wrap: anywhere; }
+        
+        /* ================= CSS CHO REACTION PICKER (Bắt buộc phải có) ================= */
+        .reaction-wrapper { position: relative; display: inline-block; }
+        .reaction-picker {
+            position: absolute; bottom: 100%; left: 0; margin-bottom: 8px;
+            background: white; border-radius: 30px; padding: 6px 10px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2); display: none; gap: 4px; z-index: 100;
+        }
+        .reaction-picker::after {
+            content: ""; position: absolute; top: 100%; left: 0; right: 0; height: 12px; background: transparent;
+        }
+        .reaction-wrapper:hover .reaction-picker { display: flex; }
+        .reaction-btn { font-size: 26px; background: none; border: 0; cursor: pointer; transition: transform 0.15s; padding: 2px; }
+        .reaction-btn:hover { transform: scale(1.4); }
+        .action-btn { border-radius: 4px; transition: background 0.2s; font-weight: 600; font-size: 0.95rem; color: #65676b; border: none; background: transparent; }
+        .action-btn:hover { background-color: #f0f2f5; color: #65676b; }
     </style>
 </head>
 <body class="bg-light">
 <nav class="navbar navbar-dark bg-primary shadow-sm">
     <div class="container">
-        <a class="navbar-brand fw-bold" th:href="@{/feed}">FAKEBOOK</a>
+        <a class="navbar-brand fw-bold" th:href="@{/feed}">ALOUTE</a>
         <div class="d-flex gap-2">
             <a class="btn btn-outline-light btn-sm" th:href="@{/videos}">Danh sách video</a>
             <a class="btn btn-light btn-sm" th:href="@{/feed}">Bảng tin</a>
@@ -46,13 +63,25 @@
                     <span>Share: <strong th:id="|share-count-${post.id}|" th:text="${post.shareCount}">0</strong></span>
                 </div>
                 <div class="d-flex gap-2">
-                    <form th:action="@{/posts/{id}/like(id=${post.id})}" method="post"
-                          class="like-form" th:attr="data-post-id=${post.id}">
-                        <button type="submit" class="btn btn-sm like-button"
+                    
+                    <!-- ĐÃ THAY THẾ FORM CŨ BẰNG GIAO DIỆN REACTION CỦA FEED -->
+                    <div class="reaction-wrapper d-flex">
+                        <div class="reaction-picker">
+                            <button type="button" class="reaction-btn" data-reaction="LIKE"  title="Thích">👍</button>
+                            <button type="button" class="reaction-btn" data-reaction="LOVE"  title="Yêu thích">❤️</button>
+                            <button type="button" class="reaction-btn" data-reaction="HAHA"  title="Haha">😆</button>
+                            <button type="button" class="reaction-btn" data-reaction="WOW"   title="Wow">😮</button>
+                            <button type="button" class="reaction-btn" data-reaction="SAD"   title="Buồn">😢</button>
+                            <button type="button" class="reaction-btn" data-reaction="ANGRY" title="Phẫn nộ">😡</button>
+                        </div>
+                        <button type="button" class="btn btn-sm action-btn reaction-main-btn" 
+                                th:attr="data-post-id=${post.id}, data-user-reaction=${liked ? 'LIKE' : ''}"
                                 th:classappend="${liked} ? 'btn-primary' : 'btn-outline-primary'">
-                            <span class="like-text" th:text="${liked} ? 'Đã thích' : 'Thích'">Thích</span>
+                            <span class="reaction-icon" th:text="${liked ? '👍' : '👍'}">👍</span>
+                            <span class="reaction-label" th:text="${liked ? 'Đã thích' : 'Thích'}">Thích</span>
                         </button>
-                    </form>
+                    </div>
+
                     <button type="button" class="btn btn-outline-success btn-sm share-video-button"
                             th:attr="data-share-endpoint=@{/videos/{id}/share(id=${post.id})},data-share-url=@{/videos/{id}(id=${post.id})},data-share-title=${post.title},data-post-id=${post.id}">
                         Chia sẻ
@@ -76,7 +105,8 @@
                     </div>
                 </div>
                 <form th:action="@{/posts/{id}/comments(id=${post.id})}" method="post"
-                      class="comment-form d-flex gap-2 mt-3" th:attr="data-post-id=${post.id}">
+                      class="comment-form d-flex gap-2 mt-3" t
+                      h:attr="data-post-id=${post.id}">
                     <input name="content" maxlength="2000" class="form-control"
                            placeholder="Viết bình luận..." required>
                     <button class="btn btn-primary">Gửi</button>
